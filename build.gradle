@@ -1,0 +1,22 @@
+group 'hjeisa'
+version '0.0.1'
+
+def jdaVersion = '3.3.0_260'
+
+apply plugin: 'java'
+apply plugin: 'application'
+
+mainClassName = 'hjeisa.waifubot.Program'
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    compile 'org.slf4j:slf4j-api:1.7.21'
+    compile 'net.dv8tion:JDA:' + jdaVersion
+
+    testCompile 'junit:junit:4.12'
+}
+
+compileJava.options.encoding = 'UTF-8'
