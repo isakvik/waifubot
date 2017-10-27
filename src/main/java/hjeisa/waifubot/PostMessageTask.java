@@ -16,6 +16,11 @@ public class PostMessageTask implements Runnable {
     @Override
     public void run() {
         MessageChannel chan = request.getChannel();
-        chan.sendMessage("Scheduled message placeholder~ (debug)").queue();
+        String postedText = "Scheduled message placeholder~ (debug)";
+        chan.sendMessage(postedText).queue();
+
+        if(Config.debug){
+            System.out.println("Requested (tags: " + request.getSearchText() + "): #" + chan.getName() + ": <" + Config.bot_name + "> " + postedText);
+        }
     }
 }

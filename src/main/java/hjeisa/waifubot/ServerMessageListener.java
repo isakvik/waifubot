@@ -31,9 +31,10 @@ public class ServerMessageListener extends ListenerAdapter {
         try {
             ping(event);
             post(event);
+            cancel(event);
         }
         catch(Exception e) {
-            event.getChannel().sendMessage("An error occurred while processing your request.").queue();
+            event.getChannel().sendMessage("An unexpected error occurred while processing your request.").queue();
         }
     }
 
@@ -77,7 +78,7 @@ public class ServerMessageListener extends ListenerAdapter {
 
                     Request request = new Request(event.getGuild(), event.getChannel(), intervalSeconds, searchWords);
                     requestList.add(request);
-                    postController.startPostCycle(request);
+                    postController.schedulePostCycle(request);
 
                     chan.sendMessage("Request added. Posting pictures matching \"" + searchWords + "\" tags every " +
                             Util.parseDuration(intervalSeconds) + ".").queue();
@@ -92,6 +93,31 @@ public class ServerMessageListener extends ListenerAdapter {
             else {
                 chan.sendMessage("Invalid number of arguments. Correct form is:\n"+
                         "`!post <interval> <search string>`").queue();
+            }
+        }
+    }
+
+    private void cancel(GuildMessageReceivedEvent event){
+        Message message = event.getMessage();
+        String content = message.getRawContent();
+        MessageChannel chan = message.getChannel();
+
+        // cancel post cycle
+        if(content.toLowerCase().startsWith("!cancel")) {
+            // if command has tag parameters
+            if(content.split(" ").length > 1) {
+                // TODO: finish this
+                chan.sendMessage("TODO: finish this...").queue();
+            }
+            else {
+                int cancelled = postController.cancelChannelPostCycles(chan);
+
+                if (cancelled == 0) {
+                    chan.sendMessage("No requests to cancel for this channel.").queue();
+                }
+                else {
+                    chan.sendMessage("Cancelled all requests for this channel.").queue();
+                }
             }
         }
     }
