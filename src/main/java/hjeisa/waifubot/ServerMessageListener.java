@@ -6,18 +6,14 @@ import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 
-import java.sql.CallableStatement;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
 
 public class ServerMessageListener extends ListenerAdapter {
 
+    private PostController postController = new PostController();
     private List<Request> requestList = new ArrayList<>();
 
     @Override
@@ -37,7 +33,7 @@ public class ServerMessageListener extends ListenerAdapter {
             post(event);
         }
         catch(Exception e) {
-            event.getChannel().sendMessage("An exception occurred while processing your request.").queue();
+            event.getChannel().sendMessage("An error occurred while processing your request.").queue();
         }
     }
 
@@ -68,19 +64,23 @@ public class ServerMessageListener extends ListenerAdapter {
 
                 try {
                     // Duration.parse requires "pt" prefix
-                    long interval = Duration.parse("pt" + intervalString).toMillis();
-                    if(interval < 0)
+                    long intervalSeconds = Duration.parse("pt" + intervalString).getSeconds();
+                    if(intervalSeconds < 0)
                         throw new DateTimeParseException("Time can't be negative", intervalString, 0);
 
-                    if(interval < Config.min_posting_interval)
-                        throw new DateTimeParseException("Time is too short. Minimum interval is " +
-                                Util.parseDuration(Config.min_posting_interval) + ".", intervalString, 0);
+                    if(!Config.debug)
+                        if(intervalSeconds < Config.min_posting_interval)
+                            throw new DateTimeParseException("Time is too short. Minimum interval is " +
+                                    Util.parseDuration(Config.min_posting_interval) + ".", intervalString, 0);
+                    else if(intervalSeconds == 0)
+                        throw new DateTimeParseException("Time can't be zero.", intervalString, 0);
 
-                    Request request = new Request(event.getGuild(), event.getChannel(), interval, searchWords);
+                    Request request = new Request(event.getGuild(), event.getChannel(), intervalSeconds, searchWords);
                     requestList.add(request);
+                    postController.startPostCycle(request);
 
                     chan.sendMessage("Request added. Posting pictures matching \"" + searchWords + "\" tags every " +
-                            Util.parseDuration(interval) + ".").queue();
+                            Util.parseDuration(intervalSeconds) + ".").queue();
                 }
                 catch (DateTimeParseException e) {
                     chan.sendMessage(e.getMessage() + ".").queue();
