@@ -10,5 +10,5 @@ public class Config {
     public static final String bot_ident = "#4906";
     public static final String bot_token = "MzUwNDMyMDk4MzE1OTI3NTc0.DI72Lw.OvGv3xGd_4WhRLz_w_UWQi3HD8Q";
 
-    public static final long min_posting_interval = 60000;
+    public static final long min_posting_interval = 60; // seconds
 }

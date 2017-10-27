@@ -20,7 +20,7 @@ public class Request {
         this.timeInterval = timeInterval;
         this.searchText = searchText;
 
-        creationTime = Instant.now().toEpochMilli();
+        creationTime = Instant.now().getEpochSecond();
     }
 
     public Guild getServer() {
