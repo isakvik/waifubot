@@ -120,6 +120,7 @@ public class ServerMessageListener extends ListenerAdapter {
 
                 if(request != null){
                     postController.cancelPostCycle(request);
+                    chan.sendMessage("Cancelled request for tags \"" + request.getSearchText() + "\"").queue();
                 }
             }
             else {
