@@ -20,19 +20,22 @@ public class PrivateMessageListener extends ListenerAdapter {
         }
 
         ping(event);
+        post(event);
     }
 
-    private void initFunction(PrivateMessageReceivedEvent event) {
-    }
-
-    private static void ping(PrivateMessageReceivedEvent event){
+    private void ping(PrivateMessageReceivedEvent event){
         Message message = event.getMessage();
         String content = message.getRawContent();
 
         // ping function
         if(content.equalsIgnoreCase("!ping")) {
             MessageChannel chan = message.getChannel();
-            chan.sendMessage("Pong! (" + "some amount of " + "ms)").queue();
+            chan.sendMessage("Pong!").queue();
         }
+    }
+
+    private void post(PrivateMessageReceivedEvent event){
+        MessageChannel chan = event.getChannel();
+        chan.sendMessage("I don't support posting images in PMs (yet?).").queue();
     }
 }
