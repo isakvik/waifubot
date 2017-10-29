@@ -15,12 +15,13 @@ public class PostMessageTask implements Runnable {
 
     @Override
     public void run() {
-        MessageChannel chan = request.getChannel();
+        // TODO: make image finding system, replace placeholder message
         String postedText = "Scheduled message placeholder~ (debug)";
-        chan.sendMessage(postedText).queue();
+        MessageChannel chan = request.getChannel();
 
         if(Config.debug){
             System.out.println("Requested (tags: " + request.getSearchText() + "): #" + chan.getName() + ": <" + Config.bot_name + "> " + postedText);
         }
+        chan.sendMessage(postedText).queue();
     }
 }
