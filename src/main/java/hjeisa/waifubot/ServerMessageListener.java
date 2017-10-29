@@ -119,8 +119,12 @@ public class ServerMessageListener extends ListenerAdapter {
                 Request request = Util.findRequestBySearchText(requestList, chan, searchWords);
 
                 if(request != null){
-                    postController.cancelPostCycle(request);
-                    chan.sendMessage("Cancelled request for tags \"" + request.getSearchText() + "\"").queue();
+                    if(postController.cancelPostCycle(request)){
+                        chan.sendMessage("Cancelled request for tags \"" + request.getSearchText() + "\"").queue();
+                    }
+                    else {
+                        chan.sendMessage("Could not cancel request.").queue();
+                    }
                 }
             }
             else {
@@ -148,7 +152,10 @@ public class ServerMessageListener extends ListenerAdapter {
             if(requestsForChannel.size() > 0){
                 StringBuilder str = new StringBuilder("Image posting cycles for this channel: ");
                 for(Request req : requestsForChannel){
-                    str.append("\n- Tags: \"" + req.getSearchText() + "\" every " + Util.parseDuration(req.getTimeInterval()));
+                    str.append("\n- Tags: \"")
+                       .append(req.getSearchText())
+                       .append("\" every ")
+                       .append(Util.parseDuration(req.getTimeInterval()));
                 }
                 chan.sendMessage(str.toString()).queue();
             }
