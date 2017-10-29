@@ -6,4 +6,3 @@ build/
 .idea
 *.jar
 /waifubot.iml
-/src/main/java/hjeisa/waifubot/Config.java
