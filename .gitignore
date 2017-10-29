@@ -1,15 +1,9 @@
 *.class
 
 build/
-
 .gradle
 
-
 .idea
-
 *.jar
-
-*.aar
-
-*.war
 /waifubot.iml
+/src/main/java/hjeisa/waifubot/Config.java
