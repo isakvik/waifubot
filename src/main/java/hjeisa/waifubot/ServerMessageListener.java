@@ -32,6 +32,7 @@ public class ServerMessageListener extends ListenerAdapter {
             ping(event);
             post(event);
             cancel(event);
+            list(event);
         }
         catch(Exception e) {
             event.getChannel().sendMessage("An unexpected error occurred while processing your request.").queue();
@@ -69,19 +70,27 @@ public class ServerMessageListener extends ListenerAdapter {
                     if(intervalSeconds < 0)
                         throw new DateTimeParseException("Time can't be negative", intervalString, 0);
 
-                    if(!Config.debug)
-                        if(intervalSeconds < Config.min_posting_interval)
+                    if(!Config.debug){
+                        if (intervalSeconds < Config.min_posting_interval) {
                             throw new DateTimeParseException("Time is too short. Minimum interval is " +
                                     Util.parseDuration(Config.min_posting_interval) + ".", intervalString, 0);
-                    else if(intervalSeconds == 0)
+                        }
+                    }
+                    else if(intervalSeconds == 0){
                         throw new DateTimeParseException("Time can't be zero.", intervalString, 0);
+                    }
 
-                    Request request = new Request(event.getGuild(), event.getChannel(), intervalSeconds, searchWords);
-                    requestList.add(request);
-                    postController.schedulePostCycle(request);
+                    if(Util.findRequestBySearchText(requestList, chan, searchWords) == null){
+                        Request request = new Request(event.getGuild(), event.getChannel(), intervalSeconds, searchWords);
+                        requestList.add(request);
+                        postController.schedulePostCycle(request);
 
-                    chan.sendMessage("Request added. Posting pictures matching \"" + searchWords + "\" tags every " +
-                            Util.parseDuration(intervalSeconds) + ".").queue();
+                        chan.sendMessage("Request added. Posting pictures matching \"" + searchWords + "\" tags every " +
+                                Util.parseDuration(intervalSeconds) + ".").queue();
+                    }
+                    else {
+                        chan.sendMessage("I'm already posting pictures with the same tags in this channel.").queue();
+                    }
                 }
                 catch (DateTimeParseException e) {
                     chan.sendMessage(e.getMessage() + ".").queue();
@@ -103,21 +112,47 @@ public class ServerMessageListener extends ListenerAdapter {
         MessageChannel chan = message.getChannel();
 
         // cancel post cycle
-        if(content.toLowerCase().startsWith("!cancel")) {
+        if(content.toLowerCase().startsWith("!cancel")){
             // if command has tag parameters
-            if(content.split(" ").length > 1) {
-                // TODO: finish this
-                chan.sendMessage("TODO: finish this...").queue();
+            if(content.split(" ").length > 1){
+                String searchWords = content.substring(8);
+                Request request = Util.findRequestBySearchText(requestList, chan, searchWords);
+
+                if(request != null){
+                    postController.cancelPostCycle(request);
+                }
             }
             else {
                 int cancelled = postController.cancelChannelPostCycles(chan);
 
-                if (cancelled == 0) {
+                if (cancelled == 0){
                     chan.sendMessage("No requests to cancel for this channel.").queue();
                 }
                 else {
                     chan.sendMessage("Cancelled all requests for this channel.").queue();
                 }
+            }
+        }
+    }
+
+    private void list(GuildMessageReceivedEvent event){
+        Message message = event.getMessage();
+        String content = message.getRawContent();
+        MessageChannel chan = message.getChannel();
+
+        // cancel post cycle
+        if(content.toLowerCase().startsWith("!list")){
+            List<Request> requestsForChannel = Util.findAllRequestsByChannel(requestList, chan);
+
+            if(requestsForChannel.size() > 0){
+                StringBuilder str = new StringBuilder("Image posting cycles for this channel: ");
+                for(Request req : requestsForChannel){
+                    str.append("\n- Tags: \"" + req.getSearchText() + "\" every " + Util.parseDuration(req.getTimeInterval()));
+                }
+                chan.sendMessage(str.toString()).queue();
+            }
+            else {
+                chan.sendMessage("I'm not posting any images in this channel.").queue();
             }
         }
     }
