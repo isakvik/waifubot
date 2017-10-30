@@ -1,6 +1,7 @@
 package hjeisa.waifubot;
 
 import hjeisa.waifubot.model.Request;
+import hjeisa.waifubot.posting.PostController;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;

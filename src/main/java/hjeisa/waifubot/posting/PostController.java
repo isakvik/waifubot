@@ -1,5 +1,7 @@
-package hjeisa.waifubot;
+package hjeisa.waifubot.posting;
 
+import hjeisa.waifubot.Config;
+import hjeisa.waifubot.Util;
 import hjeisa.waifubot.model.Request;
 import net.dv8tion.jda.core.entities.MessageChannel;
 
