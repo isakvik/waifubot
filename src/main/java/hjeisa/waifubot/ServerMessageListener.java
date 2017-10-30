@@ -130,15 +130,15 @@ public class ServerMessageListener extends ListenerAdapter {
                     chan.sendMessage("No request matching criteria found.").queue();
                 }
             }
-            else {
-                int cancelled = postController.cancelChannelPostCycles(chan);
+        }
+        else if(content.toLowerCase().equals("!cancel")){
+            int cancelled = postController.cancelChannelPostCycles(chan);
 
-                if (cancelled == 0){
-                    chan.sendMessage("No requests to cancel for this channel.").queue();
-                }
-                else {
-                    chan.sendMessage("Cancelled all requests for this channel.").queue();
-                }
+            if (cancelled == 0){
+                chan.sendMessage("No requests to cancel for this channel.").queue();
+            }
+            else {
+                chan.sendMessage("Cancelled all requests for this channel.").queue();
             }
         }
     }
