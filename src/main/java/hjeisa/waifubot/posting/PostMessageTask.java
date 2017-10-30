@@ -3,8 +3,6 @@ package hjeisa.waifubot;
 import hjeisa.waifubot.model.Request;
 import net.dv8tion.jda.core.entities.MessageChannel;
 
-import java.util.TimerTask;
-
 public class PostMessageTask implements Runnable {
 
     private Request request;
