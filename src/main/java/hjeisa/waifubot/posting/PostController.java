@@ -26,7 +26,7 @@ public class PostController {
         futures.put(request, future);
 
         if(Config.debug){
-            System.out.println("Scheduled: \"" + request.getSearchText() + "\" for #" + request.getChannel().getName() +
+            System.out.println("Scheduled: \"" + request.getSearchTags() + "\" for #" + request.getChannel().getName() +
                     " every " + Util.parseDuration(request.getTimeInterval()));
         }
     }
@@ -35,7 +35,7 @@ public class PostController {
         ScheduledFuture future = futures.get(request);
 
         if(Config.debug){
-            System.out.println("Cancelled: \"" + request.getSearchText() + "\" for #" + request.getChannel().getName() +
+            System.out.println("Cancelled: \"" + request.getSearchTags() + "\" for #" + request.getChannel().getName() +
                     " every " + Util.parseDuration(request.getTimeInterval()));
         }
         return future.cancel(true);
@@ -57,7 +57,7 @@ public class PostController {
                 amountCancelled++;
 
                 if(Config.debug){
-                    System.out.println("Cancelled: \"" + request.getSearchText() + "\" for #" + request.getChannel().getName() +
+                    System.out.println("Cancelled: \"" + request.getSearchTags() + "\" for #" + request.getChannel().getName() +
                             " every " + Util.parseDuration(request.getTimeInterval()));
                 }
             }

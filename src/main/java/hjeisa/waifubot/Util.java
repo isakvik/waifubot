@@ -20,7 +20,7 @@ public class Util {
     // returns one request where the search tags and channel match, or null
     public static Request findRequestBySearchText(List<Request> list, MessageChannel chan, String searchWords){
         for(Request req : list){
-            if(req.getSearchText().equals(searchWords) && req.getChannel().equals(chan)){
+            if(req.getSearchTags().equals(searchWords) && req.getChannel().equals(chan)){
                 return req;
             }
         }

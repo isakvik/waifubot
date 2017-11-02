@@ -61,9 +61,9 @@ public class ServerMessageListener extends ListenerAdapter {
         // create request
         if(content.toLowerCase().startsWith("!post ")) {
             if(content.split(" ").length > 2){
-                int indexOfSearchWords = content.indexOf(' ',6);
-                String intervalString = content.substring(6, indexOfSearchWords);
-                String searchWords = content.substring(indexOfSearchWords + 1);
+                int indexOfSearchTags = content.indexOf(' ',6);
+                String intervalString = content.substring(6, indexOfSearchTags);
+                String searchTags = content.substring(indexOfSearchTags + 1);
 
                 try {
                     // Duration.parse requires "pt" prefix
@@ -81,12 +81,12 @@ public class ServerMessageListener extends ListenerAdapter {
                         throw new DateTimeParseException("Time can't be zero.", intervalString, 0);
                     }
 
-                    if(Util.findRequestBySearchText(requestList, chan, searchWords) == null){
-                        Request request = new Request(event.getGuild(), event.getChannel(), intervalSeconds, searchWords);
+                    if(Util.findRequestBySearchText(requestList, chan, searchTags) == null){
+                        Request request = new Request(event.getGuild(), event.getChannel(), intervalSeconds, searchTags);
                         requestList.add(request);
                         postController.schedulePostCycle(request);
 
-                        chan.sendMessage("Request added. Posting pictures matching \"" + searchWords + "\" tags every " +
+                        chan.sendMessage("Request added. Posting pictures matching \"" + searchTags + "\" tags every " +
                                 Util.parseDuration(intervalSeconds) + ".").queue();
                     }
                     else {
@@ -116,12 +116,12 @@ public class ServerMessageListener extends ListenerAdapter {
         if(content.toLowerCase().startsWith("!cancel")){
             // if command has tag parameters
             if(content.split(" ").length > 1){
-                String searchWords = content.substring(8);
-                Request request = Util.findRequestBySearchText(requestList, chan, searchWords);
+                String searchTags = content.substring(8);
+                Request request = Util.findRequestBySearchText(requestList, chan, searchTags);
 
                 if(request != null){
                     if(postController.cancelPostCycle(request)){
-                        chan.sendMessage("Cancelled request for tags \"" + request.getSearchText() + "\".").queue();
+                        chan.sendMessage("Cancelled request for tags \"" + request.getSearchTags() + "\".").queue();
                     }
                     else {
                         chan.sendMessage("Could not cancel request.").queue();
@@ -157,7 +157,7 @@ public class ServerMessageListener extends ListenerAdapter {
                 StringBuilder str = new StringBuilder("Image posting cycles for this channel: ");
                 for(Request req : requestsForChannel){
                     str.append("\n- Tags: \"")
-                       .append(req.getSearchText())
+                       .append(req.getSearchTags())
                        .append("\" every ")
                        .append(Util.parseDuration(req.getTimeInterval()));
                 }

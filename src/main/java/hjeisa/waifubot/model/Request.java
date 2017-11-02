@@ -4,6 +4,8 @@ import net.dv8tion.jda.core.entities.Guild;
 import net.dv8tion.jda.core.entities.TextChannel;
 
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Request {
 
@@ -12,15 +14,19 @@ public class Request {
     private long creationTime;
 
     private long timeInterval;
-    private String searchText;
+    private String searchTags;
 
-    public Request(Guild server, TextChannel channel, long timeInterval, String searchText) {
+    // used for optimizing network calls
+    private Map<String, Integer> lastPostCounts;
+
+    public Request(Guild server, TextChannel channel, long timeInterval, String searchTags) {
         this.server = server;
         this.channel = channel;
         this.timeInterval = timeInterval;
-        this.searchText = searchText;
+        this.searchTags = searchTags;
 
         creationTime = Instant.now().getEpochSecond();
+        lastPostCounts = new HashMap<>();
     }
 
     public Guild getServer() {
@@ -47,12 +53,12 @@ public class Request {
         this.timeInterval = timeInterval;
     }
 
-    public String getSearchText() {
-        return searchText;
+    public String getSearchTags() {
+        return searchTags;
     }
 
-    public void setSearchText(String searchText) {
-        this.searchText = searchText;
+    public void setSearchTags(String searchText) {
+        this.searchTags = searchText;
     }
 
     public long getCreationTime() {
