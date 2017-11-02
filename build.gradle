@@ -6,7 +6,7 @@ def jdaVersion = '3.3.0_260'
 apply plugin: 'java'
 apply plugin: 'application'
 
-mainClassName = 'hjeisa.waifubot.Program'
+mainClassName = 'hjeisa.waifubot.Bot'
 
 repositories {
     jcenter()
