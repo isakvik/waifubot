@@ -31,6 +31,14 @@ public class PostController {
         }
     }
 
+    public void schedulePostOnce(Request request) {
+        PostMessageTask task = new PostMessageTask(request);
+        service.schedule(task, 0, TimeUnit.SECONDS);
+        if(Config.debug){
+            System.out.println("Posting once: \"" + request.getSearchTags() + "\" for #" + request.getChannel().getName());
+        }
+    }
+
     public boolean cancelPostCycle(Request request) {
         ScheduledFuture future = futures.get(request);
 

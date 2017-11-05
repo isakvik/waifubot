@@ -4,18 +4,25 @@ import hjeisa.waifubot.model.Request;
 import hjeisa.waifubot.posting.PostController;
 import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.MessageChannel;
+import net.dv8tion.jda.core.entities.User;
 import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ServerMessageListener extends ListenerAdapter {
 
+    // schedules post cycles
     private PostController postController = new PostController();
+    // holds all requests not cancelled
     private List<Request> requestList = new ArrayList<>();
+    // holds each user's best girl
+    private Map<User, String> bestGirlMap = new HashMap<>();
 
     @Override
     public void onGuildMessageReceived(GuildMessageReceivedEvent event) {
@@ -34,6 +41,7 @@ public class ServerMessageListener extends ListenerAdapter {
             post(event);
             cancel(event);
             list(event);
+            bestgirl(event);
         }
         catch(Exception e) {
             event.getChannel().sendMessage("An unexpected error occurred while processing your request.").queue();
@@ -49,7 +57,7 @@ public class ServerMessageListener extends ListenerAdapter {
 
         // ping function
         if(content.equalsIgnoreCase("!ping")) {
-            chan.sendMessage("Pong! (" + "some amount of " + "ms)").queue();
+            chan.sendMessage("Pong!").queue();
         }
     }
 
@@ -149,7 +157,7 @@ public class ServerMessageListener extends ListenerAdapter {
         String content = message.getRawContent();
         MessageChannel chan = message.getChannel();
 
-        // cancel post cycle
+        // list all current posting cycles
         if(content.toLowerCase().startsWith("!list")){
             List<Request> requestsForChannel = Util.findAllRequestsByChannel(requestList, chan);
 
@@ -166,6 +174,33 @@ public class ServerMessageListener extends ListenerAdapter {
             else {
                 chan.sendMessage("I'm not posting any images in this channel.").queue();
             }
+        }
+    }
+
+    private void bestgirl(GuildMessageReceivedEvent event) {
+        Message message = event.getMessage();
+        String content = message.getRawContent();
+        MessageChannel chan = message.getChannel();
+
+        // posts user's best girl if one is found
+        if(content.toLowerCase().startsWith("!bestgirl")){
+            String girlToPost;
+            // sets user's best girl
+            if(content.toLowerCase().startsWith("!bestgirl set ") && content.split(" ").length >= 3){
+                girlToPost = content.substring("!bestgirl set ".length());
+                bestGirlMap.put(message.getAuthor(), girlToPost);
+                chan.sendMessage("Ok, recognized your best girl.").queue();
+            }
+            else {
+                girlToPost = bestGirlMap.get(message.getAuthor());
+                if(girlToPost == null){
+                    chan.sendMessage("Set your best girl with the `!bestgirl set <character>` command first.").queue();
+                    return;
+                }
+                chan.sendMessage(girlToPost + "!").queue();
+            }
+            Request request = new Request(event.getGuild(), event.getChannel(), 0, girlToPost + " 1girl");
+            postController.schedulePostOnce(request);
         }
     }
 }
