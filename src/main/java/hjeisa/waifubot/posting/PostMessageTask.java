@@ -101,7 +101,7 @@ public class PostMessageTask implements Runnable {
             sourceMessage.append("Post: ");
             sourceMessage.append(response.getPostURL());
             sourceMessage.append("\nSource: ");
-            sourceMessage.append(response.getPostURL().isEmpty() ? "none" : "<" + response.getSourceURL() + ">");
+            sourceMessage.append(response.getSourceURL().isEmpty() ? "none" : "<" + response.getSourceURL() + ">");
 
             chan.sendFile(response.getImageData(), response.getFileName(), null).queue(message1 ->
                     chan.sendMessage(sourceMessage.toString()).queue()
