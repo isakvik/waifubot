@@ -1,8 +1,21 @@
 package hjeisa.waifubot.posting;
 
 import hjeisa.waifubot.Config;
+import hjeisa.waifubot.model.ImageResponse;
 import hjeisa.waifubot.model.Request;
+import hjeisa.waifubot.web.ConnectionHandler;
+import hjeisa.waifubot.web.URLs;
+import net.dv8tion.jda.core.EmbedBuilder;
+import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.MessageChannel;
+import net.dv8tion.jda.core.entities.MessageEmbed;
+import net.dv8tion.jda.core.entities.impl.MessageImpl;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.*;
+import java.util.function.Consumer;
 
 public class PostMessageTask implements Runnable {
 
@@ -14,14 +27,64 @@ public class PostMessageTask implements Runnable {
 
     @Override
     public void run() {
-        // TODO: make image finding system, replace placeholder message
-        // TODO: store Request.lastPostCount, optimize network calls
-        String postedText = "Scheduled message placeholder~ (debug)";
         MessageChannel chan = request.getChannel();
 
-        if(Config.debug){
-            System.out.println("Requested (tags: " + request.getSearchTags() + "): #" + chan.getName() + ": <" + Config.bot_name + "> " + postedText);
+        ConnectionHandler handler = new ConnectionHandler();
+        Map<String,Integer> postCounts = handler.getPostCounts(request.getSearchTags());
+
+        int sum = 0;
+        for(Integer val : postCounts.values())
+            sum += val;
+
+        Random rng = new Random();
+        int random = rng.nextInt(sum);
+
+        ArrayList<Map.Entry<String,Integer>> entryList = new ArrayList<>();
+        entryList.addAll(postCounts.entrySet());
+        entryList.sort((o1, o2) -> o1.getValue() > o2.getValue() ? 1 : -1);
+
+        int pagesSkipped = 0;
+        int page = random;
+        String selectedImageboard = "";
+        for(int i = 0; i < postCounts.size()-1; i++){
+            if(random > entryList.get(i).getValue() + pagesSkipped){
+                page -= entryList.get(i).getValue();
+                selectedImageboard = entryList.get(i+1).getKey();
+            }
+            pagesSkipped += entryList.get(i).getValue();
         }
-        chan.sendMessage(postedText).queue();
+
+        URL url = null;
+        try {
+            url = handler.constructApiUrl(selectedImageboard, 1, page, request.getSearchTags());
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            chan.sendMessage("An unexpected error occurred while processing your request.").queue();
+            return;
+        }
+        String content = handler.getPageContent(url);
+        if(content == null || content.isEmpty()){
+            chan.sendMessage("Could not get response from " + selectedImageboard + "'s API.").queue();
+            return;
+        }
+
+        ImageResponse response = null;
+        try {
+            response = handler.parseResponse(selectedImageboard, content);
+        } catch (IOException e) {
+            e.printStackTrace();
+            chan.sendMessage("An unexpected error occurred while processing your request.").queue();
+            return;
+        }
+        String sourceMessage = "Post: " + response.getPostURL() + "\nSource: " + response.getSourceURL();
+        chan.sendFile(response.getImageData(), response.getFileName(), null).queue(message1 ->
+                chan.sendMessage(sourceMessage).queue()
+        );
+
+        if(Config.debug){
+            System.out.println("Requested (tags: " + request.getSearchTags() + "): #" + chan.getName() + ": " +
+                    "<" + Config.bot_name + "> " + sourceMessage);
+            System.out.println("File uploaded: " + response.getFileName());
+        }
     }
 }
