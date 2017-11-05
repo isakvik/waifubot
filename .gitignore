@@ -1,6 +1,7 @@
 *.class
 
 build/
+gradle/
 .gradle
 
 .idea
