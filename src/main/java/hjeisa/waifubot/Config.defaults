@@ -4,6 +4,8 @@ public class ConfigDefaults {
     public static final boolean debug = true;
     public static final long min_posting_interval = 60; // seconds
 
+    public static final int max_image_file_size = (4 * 1024 * 1024);
+
     public static final String client_id = "";
     public static final String client_secret = "";
 
