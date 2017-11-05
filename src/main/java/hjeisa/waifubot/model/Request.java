@@ -16,9 +16,6 @@ public class Request {
     private long timeInterval;
     private String searchTags;
 
-    // used for optimizing network calls
-    private Map<String, Integer> lastPostCounts;
-
     public Request(Guild server, TextChannel channel, long timeInterval, String searchTags) {
         this.server = server;
         this.channel = channel;
@@ -26,7 +23,6 @@ public class Request {
         this.searchTags = searchTags;
 
         creationTime = Instant.now().getEpochSecond();
-        lastPostCounts = new HashMap<>();
     }
 
     public Guild getServer() {
