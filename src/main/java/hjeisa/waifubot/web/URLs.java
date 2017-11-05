@@ -5,6 +5,8 @@ import java.util.Map;
 
 public class URLs {
 
+    // TODO: add yande.re and sankakucomplex apis
+
     public static Map<String, String> imageboardApis = createImageboardApiMap();
     private static Map<String, String> createImageboardApiMap(){
         Map<String, String> map = new HashMap<>();

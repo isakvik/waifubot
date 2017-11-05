@@ -26,6 +26,8 @@ public class ConnectionHandler {
         for(Map.Entry<String, String> entry : URLs.imageboardApis.entrySet()){
             try {
                 String content = getPageContent(constructApiUrl(entry.getKey(), 0, 0, searchTags)); // limit=0 gives us no post results
+                if(content == null)
+                    content = "";
                 InputStream is = new ByteArrayInputStream(content.getBytes());
 
                 DocumentBuilder dBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
@@ -50,6 +52,8 @@ public class ConnectionHandler {
             in = new Scanner(url.openStream(), "UTF-8").useDelimiter("//A");
             content = (in.hasNext() ? in.next() : "");
         } catch (IOException e) {
+            System.err.println("[ERROR] getPageContent for url " + url +  " failed.");
+            e.printStackTrace();
             return null;
         }
         in.close();
@@ -60,6 +64,8 @@ public class ConnectionHandler {
     public URL constructApiUrl(String imageboard, int limit, int page, String searchTags) throws MalformedURLException {
         try {
             if(imageboard.equals("konachan")){
+                if(limit == 0)
+                    limit++; // limit of 0 doesn't work
                 page++; // konachan's pages are indexed at 1
                 return new URL(URLs.imageboardApis.get(imageboard) + "limit=" + limit + "&page=" + page + "&tags=" +
                         URLEncoder.encode(searchTags, "UTF-8"));

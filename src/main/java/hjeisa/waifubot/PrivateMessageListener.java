@@ -35,6 +35,7 @@ public class PrivateMessageListener extends ListenerAdapter {
     }
 
     private void post(PrivateMessageReceivedEvent event){
+        // TODO: support this
         MessageChannel chan = event.getChannel();
         chan.sendMessage("I don't support posting images in PMs (yet?).").queue();
     }

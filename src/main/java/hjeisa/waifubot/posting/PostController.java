@@ -21,6 +21,7 @@ public class PostController {
     private final ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
 
     public void schedulePostCycle(Request request) {
+        // TODO: see if you can store the schedules to file
         PostMessageTask task = new PostMessageTask(request);
         ScheduledFuture future = service.scheduleAtFixedRate(task, 0, request.getTimeInterval(), TimeUnit.SECONDS);
         futures.put(request, future);

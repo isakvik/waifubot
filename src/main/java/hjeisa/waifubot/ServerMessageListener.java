@@ -24,6 +24,8 @@ public class ServerMessageListener extends ListenerAdapter {
     // holds each user's best girl
     private Map<User, String> bestGirlMap = new HashMap<>();
 
+
+
     @Override
     public void onGuildMessageReceived(GuildMessageReceivedEvent event) {
         // anti bot security
@@ -82,7 +84,7 @@ public class ServerMessageListener extends ListenerAdapter {
                     if(!Config.debug){
                         if (intervalSeconds < Config.min_posting_interval) {
                             throw new DateTimeParseException("Time is too short. Minimum interval is " +
-                                    Util.parseDuration(Config.min_posting_interval) + ".", intervalString, 0);
+                                    Util.parseDuration(Config.min_posting_interval) + "", intervalString, 0);
                         }
                     }
                     else if(intervalSeconds == 0){
@@ -103,9 +105,6 @@ public class ServerMessageListener extends ListenerAdapter {
                 }
                 catch (DateTimeParseException e) {
                     chan.sendMessage(e.getMessage() + ".").queue();
-                    if(!Config.debug) {
-                        e.printStackTrace();
-                    }
                 }
             }
             else {
@@ -178,6 +177,7 @@ public class ServerMessageListener extends ListenerAdapter {
     }
 
     private void bestgirl(GuildMessageReceivedEvent event) {
+        // TODO: store user's chosen best girl to file, reload on reboot
         Message message = event.getMessage();
         String content = message.getRawContent();
         MessageChannel chan = message.getChannel();
