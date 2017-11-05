@@ -47,6 +47,11 @@ public class PostMessageTask implements Runnable {
         for(Integer val : postCounts.values())
             sum += val;
 
+        if(sum == 0){
+            chan.sendMessage("No pictures found matching these tags in any imageboards I'm set to look in.").queue();
+            return;
+        }
+
         Random rng = new Random();
         int random = rng.nextInt(sum);
 
