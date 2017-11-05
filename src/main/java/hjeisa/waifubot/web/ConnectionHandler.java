@@ -51,7 +51,7 @@ public class ConnectionHandler {
         try {
             in = new Scanner(url.openStream(), "UTF-8").useDelimiter("//A");
             content = (in.hasNext() ? in.next() : "");
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.err.println("[ERROR] getPageContent for url " + url +  " failed.");
             e.printStackTrace();
             return null;

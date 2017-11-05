@@ -5,6 +5,7 @@ import net.dv8tion.jda.core.entities.TextChannel;
 
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 public class Request {
@@ -16,6 +17,8 @@ public class Request {
     private long timeInterval;
     private String searchTags;
 
+    public HashSet<Integer> alreadyPosted;
+
     public Request(Guild server, TextChannel channel, long timeInterval, String searchTags) {
         this.server = server;
         this.channel = channel;
@@ -23,6 +26,7 @@ public class Request {
         this.searchTags = searchTags;
 
         creationTime = Instant.now().getEpochSecond();
+        alreadyPosted = new HashSet<>();
     }
 
     public Guild getServer() {

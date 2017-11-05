@@ -53,25 +53,36 @@ public class PostMessageTask implements Runnable {
                 return;
             }
 
+            if(request.alreadyPosted.size() >= sum){
+                chan.sendMessage("Pool of images exhausted.").queue();
+                request.alreadyPosted.clear();
+            }
+
             Random rng = new Random();
             int random = rng.nextInt(sum);
+            // prevent already posted images from reappearing for the same request
+            while(request.alreadyPosted.contains(random)){
+                random++;
+                random %= sum;
+            }
+            request.alreadyPosted.add(random);
 
             ArrayList<Map.Entry<String, Integer>> entryList = new ArrayList<>();
             entryList.addAll(postCounts.entrySet());
-            entryList.sort((o1, o2) -> o1.getValue() > o2.getValue() ? 1 : -1);
+            entryList.sort((o1, o2) -> o1.getValue() > o2.getValue() ? 1 : Objects.equals(o1.getValue(), o2.getValue()) ? 0 : -1);
 
             int pagesSkipped = 0;
             int page = random;
             String selectedImageboard = "";
             for (int i = 0; i < postCounts.size() - 1; i++) {
-                if (random > entryList.get(i).getValue() + pagesSkipped) {
+                if (random >= entryList.get(i).getValue() + pagesSkipped) {
                     page -= entryList.get(i).getValue();
                     selectedImageboard = entryList.get(i + 1).getKey();
                 }
                 pagesSkipped += entryList.get(i).getValue();
             }
 
-            URL url = null;
+            URL url;
             try {
                 url = handler.constructApiUrl(selectedImageboard, 1, page, request.getSearchTags(), false);
             } catch (MalformedURLException e) {
@@ -93,6 +104,8 @@ public class PostMessageTask implements Runnable {
                 chan.sendMessage("An unexpected error occurred while processing your request.").queue();
                 System.out.println("Tags: " + request.getSearchTags());
                 System.out.println("Selected imageboard: " + selectedImageboard);
+
+                System.out.println(page);
                 return;
             }
 
