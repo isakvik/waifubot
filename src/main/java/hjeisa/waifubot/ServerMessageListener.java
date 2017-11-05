@@ -148,14 +148,14 @@ public class ServerMessageListener extends ListenerAdapter {
         MessageChannel chan = message.getChannel();
 
         // cancel post cycle
-        if(content.toLowerCase().startsWith("!cancel")){
+        if(content.toLowerCase().startsWith("!cancel ")){
             // if command has tag parameters
             if(content.split(" ").length > 1){
                 String searchTags = content.substring(8);
                 Request request = Util.findRequestBySearchText(requestList, chan, searchTags);
 
                 if(request != null){
-                    if(postController.cancelPostCycle(request)){
+                    if(postController.cancelPostCycle(requestList, request)){
                         chan.sendMessage("Cancelled request for tags \"" + request.getSearchTags() + "\".").queue();
                     }
                     else {
@@ -168,7 +168,7 @@ public class ServerMessageListener extends ListenerAdapter {
             }
         }
         else if(content.toLowerCase().equals("!cancel")){
-            int cancelled = postController.cancelChannelPostCycles(chan);
+            int cancelled = postController.cancelChannelPostCycles(requestList, chan);
 
             if (cancelled == 0){
                 chan.sendMessage("No requests to cancel for this channel.").queue();

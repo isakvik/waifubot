@@ -40,18 +40,19 @@ public class PostController {
         }
     }
 
-    public boolean cancelPostCycle(Request request) {
+    public boolean cancelPostCycle(List<Request> requestList, Request request) {
         ScheduledFuture future = futures.get(request);
 
         if(Config.debug){
             System.out.println("Cancelled: \"" + request.getSearchTags() + "\" for #" + request.getChannel().getName() +
                     " every " + Util.parseDuration(request.getTimeInterval()));
         }
+        requestList.remove(request);
         return future.cancel(true);
     }
 
     // returns the number of requests cancelled
-    public int cancelChannelPostCycles(MessageChannel channel) {
+    public int cancelChannelPostCycles(List<Request> requestList, MessageChannel channel) {
         List<Request> channelRequests = new ArrayList<>();
         int amountCancelled = 0;
 
@@ -63,6 +64,7 @@ public class PostController {
         for(Request request : channelRequests){
             ScheduledFuture future = futures.get(request);
             if(future.cancel(true)){
+                requestList.remove(request);
                 amountCancelled++;
 
                 if(Config.debug){
