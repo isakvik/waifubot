@@ -43,9 +43,10 @@ public class ServerMessageListener extends ListenerAdapter {
             post(event);
             postnsfw(event);
             picture(event);
+            bestgirl(event);
             cancel(event);
             list(event);
-            bestgirl(event);
+            exclude(event);
         }
         catch(Exception e) {
             event.getChannel().sendMessage("An unexpected error occurred while processing your request.").queue();
@@ -142,6 +143,34 @@ public class ServerMessageListener extends ListenerAdapter {
         }
     }
 
+    private void bestgirl(GuildMessageReceivedEvent event) {
+        // TODO: store user's chosen best girl to file, reload on reboot
+        Message message = event.getMessage();
+        String content = message.getRawContent();
+        MessageChannel chan = message.getChannel();
+
+        // posts user's best girl if one is found
+        if(content.toLowerCase().startsWith("!bestgirl")){
+            String girlToPost;
+            // sets user's best girl
+            if(content.toLowerCase().startsWith("!bestgirl set ") && content.split(" ").length >= 3){
+                girlToPost = content.substring("!bestgirl set ".length());
+                bestGirlMap.put(message.getAuthor(), girlToPost);
+                chan.sendMessage("Ok, recognized your best girl.").queue();
+            }
+            else {
+                girlToPost = bestGirlMap.get(message.getAuthor());
+                if(girlToPost == null){
+                    chan.sendMessage("Set your best girl with the `!bestgirl set <character>` command first.").queue();
+                    return;
+                }
+                chan.sendMessage(girlToPost + "!").queue();
+            }
+            Request request = new Request(event.getGuild(), event.getChannel(), 0, girlToPost + " 1girl");
+            postController.schedulePostOnce(request);
+        }
+    }
+
     private void cancel(GuildMessageReceivedEvent event){
         Message message = event.getMessage();
         String content = message.getRawContent();
@@ -204,31 +233,14 @@ public class ServerMessageListener extends ListenerAdapter {
         }
     }
 
-    private void bestgirl(GuildMessageReceivedEvent event) {
-        // TODO: store user's chosen best girl to file, reload on reboot
+    private void exclude(GuildMessageReceivedEvent event) {
         Message message = event.getMessage();
         String content = message.getRawContent();
         MessageChannel chan = message.getChannel();
 
-        // posts user's best girl if one is found
-        if(content.toLowerCase().startsWith("!bestgirl")){
-            String girlToPost;
-            // sets user's best girl
-            if(content.toLowerCase().startsWith("!bestgirl set ") && content.split(" ").length >= 3){
-                girlToPost = content.substring("!bestgirl set ".length());
-                bestGirlMap.put(message.getAuthor(), girlToPost);
-                chan.sendMessage("Ok, recognized your best girl.").queue();
-            }
-            else {
-                girlToPost = bestGirlMap.get(message.getAuthor());
-                if(girlToPost == null){
-                    chan.sendMessage("Set your best girl with the `!bestgirl set <character>` command first.").queue();
-                    return;
-                }
-                chan.sendMessage(girlToPost + "!").queue();
-            }
-            Request request = new Request(event.getGuild(), event.getChannel(), 0, girlToPost + " 1girl");
-            postController.schedulePostOnce(request);
+        // create a personalized blacklist for each user, adding exclude tags to each request
+        if(content.toLowerCase().startsWith("!exclude")){
+            // TODO: implement this
         }
     }
 }
