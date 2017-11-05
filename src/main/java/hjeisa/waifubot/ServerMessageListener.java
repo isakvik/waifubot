@@ -136,6 +136,10 @@ public class ServerMessageListener extends ListenerAdapter {
                 postController.schedulePostOnce(request);
             }
         }
+        else if(content.equals("!picture")){
+            Request request = new Request(event.getGuild(), event.getChannel(), 0, "");
+            postController.schedulePostOnce(request);
+        }
     }
 
     private void cancel(GuildMessageReceivedEvent event){
