@@ -73,7 +73,7 @@ public class PostMessageTask implements Runnable {
 
             URL url = null;
             try {
-                url = handler.constructApiUrl(selectedImageboard, 1, page, request.getSearchTags());
+                url = handler.constructApiUrl(selectedImageboard, 1, page, request.getSearchTags(), false);
             } catch (MalformedURLException e) {
                 e.printStackTrace();
                 chan.sendMessage("An unexpected error occurred while processing your request.").queue();
@@ -88,9 +88,11 @@ public class PostMessageTask implements Runnable {
             ImageResponse response = null;
             try {
                 response = handler.parseResponse(selectedImageboard, content);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
                 chan.sendMessage("An unexpected error occurred while processing your request.").queue();
+                System.out.println("Tags: " + request.getSearchTags());
+                System.out.println("Selected imageboard: " + selectedImageboard);
                 return;
             }
 
@@ -113,6 +115,7 @@ public class PostMessageTask implements Runnable {
         }
         catch (Exception e){
             System.out.println("Exception caught.");
+            System.out.println("Tags: " + request.getSearchTags());
             e.printStackTrace();
         }
     }

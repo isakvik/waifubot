@@ -41,6 +41,8 @@ public class ServerMessageListener extends ListenerAdapter {
         try {
             ping(event);
             post(event);
+            postnsfw(event);
+            picture(event);
             cancel(event);
             list(event);
             bestgirl(event);
@@ -70,7 +72,7 @@ public class ServerMessageListener extends ListenerAdapter {
 
         // create request
         if(content.toLowerCase().startsWith("!post ")) {
-            if(content.split(" ").length > 2){
+            if(content.split(" ").length >= 3){
                 int indexOfSearchTags = content.indexOf(' ',6);
                 String intervalString = content.substring(6, indexOfSearchTags);
                 String searchTags = content.substring(indexOfSearchTags + 1);
@@ -79,7 +81,7 @@ public class ServerMessageListener extends ListenerAdapter {
                     // Duration.parse requires "pt" prefix
                     long intervalSeconds = Duration.parse("pt" + intervalString).getSeconds();
                     if(intervalSeconds < 0)
-                        throw new DateTimeParseException("Time can't be negative", intervalString, 0);
+                        throw new Exception("Time can't be negative.");
 
                     if(!Config.debug){
                         if (intervalSeconds < Config.min_posting_interval) {
@@ -88,7 +90,7 @@ public class ServerMessageListener extends ListenerAdapter {
                         }
                     }
                     else if(intervalSeconds == 0){
-                        throw new DateTimeParseException("Time can't be zero.", intervalString, 0);
+                        throw new Exception("Time can't be zero.");
                     }
 
                     if(Util.findRequestBySearchText(requestList, chan, searchTags) == null){
@@ -103,13 +105,35 @@ public class ServerMessageListener extends ListenerAdapter {
                         chan.sendMessage("I'm already posting pictures with the same tags in this channel.").queue();
                     }
                 }
-                catch (DateTimeParseException e) {
+                catch (DateTimeParseException dtpe){
+                    chan.sendMessage("Could not find duration. Proper usage is `!post <duration> <tags>`").queue();
+                }
+                catch (Exception e) {
                     chan.sendMessage(e.getMessage() + ".").queue();
                 }
             }
             else {
                 chan.sendMessage("Invalid number of arguments. Correct form is:\n"+
                         "`!post <interval> <search string>`").queue();
+            }
+        }
+    }
+
+    private void postnsfw(GuildMessageReceivedEvent event) {
+        // TODO: fix this
+    }
+
+    private void picture(GuildMessageReceivedEvent event) {
+        Message message = event.getMessage();
+        String content = message.getRawContent();
+        MessageChannel chan = message.getChannel();
+
+        // post one picture with tags
+        if(content.toLowerCase().startsWith("!picture ")) {
+            if (content.split(" ").length >= 2) {
+                String searchTags = content.substring("!picture ".length());
+                Request request = new Request(event.getGuild(), event.getChannel(), 0, searchTags);
+                postController.schedulePostOnce(request);
             }
         }
     }
