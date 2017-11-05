@@ -2,20 +2,14 @@ package hjeisa.waifubot.web;
 
 import hjeisa.waifubot.Config;
 import hjeisa.waifubot.model.ImageResponse;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
+import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.awt.*;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -35,18 +29,19 @@ public class ConnectionHandler {
             get picture from api with page id matching int, retrieve image(+ source url)
      */
 
-    // returns hashmap containing postcount for each
+    // returns hashmap containing postcount for results on each imageboard
     public Map<String, Integer> getPostCounts(String searchTags) {
         Map<String, Integer> postCounts = new HashMap<>();
 
         for(Map.Entry<String, String> entry : URLs.imageboardApis.entrySet()){
             try {
-                String content = getPageContent(constructApiUrl(entry, 0, 0, searchTags)); // limit=0 gives us no post results
+                String content = getPageContent(constructApiUrl(entry.getKey(), 0, 0, searchTags)); // limit=0 gives us no post results
+                InputStream is = new ByteArrayInputStream(content.getBytes());
 
                 DocumentBuilder dBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-                Document doc = dBuilder.parse(content);
+                Document doc = dBuilder.parse(is);
 
-                Element posts = doc.getElementById("posts");
+                Element posts = doc.getDocumentElement();
                 Integer postCount = Integer.parseInt(posts.getAttribute("count"));
                 postCounts.put(entry.getKey(), postCount);
 
@@ -58,33 +53,37 @@ public class ConnectionHandler {
     }
 
     // get string containing page source
-    public String getPageContent(URL url) throws IOException {
+    public String getPageContent(URL url) {
         String content = "";
-        Scanner in = new Scanner(url.openStream(), "UTF-8").useDelimiter("//A");
-        content = (in.hasNext() ? in.next() : "");
-
+        Scanner in = null;
+        try {
+            in = new Scanner(url.openStream(), "UTF-8").useDelimiter("//A");
+            content = (in.hasNext() ? in.next() : "");
+        } catch (IOException e) {
+            return null;
+        }
         in.close();
-        return content;
+        return content.substring(content.lastIndexOf("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"));
     }
 
     // creates URL based on parameters
-    public URL constructApiUrl(Map.Entry<String, String> imageboard, int limit, int page, String searchTags) {
+    public URL constructApiUrl(String imageboard, int limit, int page, String searchTags) throws MalformedURLException {
         try {
-            if(imageboard.getKey().equals("konachan")){
+            if(imageboard.equals("konachan")){
                 page++; // konachan's pages are indexed at 1
-                return new URL(URLEncoder.encode(
-                        imageboard.getValue() + "limit=" + limit + "&page=" + page + "&tags=" + searchTags, "UTF-8"));
+                return new URL(URLs.imageboardApis.get(imageboard) + "limit=" + limit + "&page=" + page + "&tags=" +
+                        URLEncoder.encode(searchTags, "UTF-8"));
             }
-            else if(imageboard.getKey().equals("safebooru")){
-                return new URL(URLEncoder.encode(
-                        imageboard.getValue() + "limit=" + limit + "&pid=" + page + "&tags=" + searchTags, "UTF-8"));
+            else if(imageboard.equals("safebooru")){
+                return new URL(URLs.imageboardApis.get(imageboard) + "limit=" + limit + "&pid=" + page + "&tags=" +
+                        URLEncoder.encode(searchTags, "UTF-8"));
             }
-            else if(imageboard.getKey().equals("gelbooru")){
+            else if(imageboard.equals("gelbooru")){
                 // rating:safe added to tags to ensure results are safe for work
-                return new URL(URLEncoder.encode(
-                        imageboard.getValue() + "limit=" + limit + "&pid=" + page + "&tags=rating:safe " + searchTags, "UTF-8"));
+                return new URL(URLs.imageboardApis.get(imageboard) + "limit=" + limit + "&pid=" + page + "&tags=" +
+                        URLEncoder.encode("rating:safe " + searchTags, "UTF-8"));
             }
-        } catch (MalformedURLException | UnsupportedEncodingException e) {
+        } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
 
@@ -92,32 +91,39 @@ public class ConnectionHandler {
     }
 
     // returns object holding all info needed to post an image
-    public ImageResponse parseResponse(Map.Entry<String, String> imageboard, String content) {
+    public ImageResponse parseResponse(String imageboard, String content) throws IOException {
         ImageResponse response = null;
 
         try {
+            InputStream is = new ByteArrayInputStream(content.getBytes());
             DocumentBuilder dBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-            Document doc = dBuilder.parse(content);
+            Document doc = dBuilder.parse(is);
 
-            Element posts = doc.getElementById("posts");
+            Element posts = doc.getDocumentElement();
             Node post = posts.getFirstChild();
 
-            String fileUrl = post.getAttributes().getNamedItem("file_url").getNodeValue();
+            String fileUrl;
+            if(imageboard.equals("safebooru"))  // safebooru does not use protocol in their
+                fileUrl = "http:" + post.getAttributes().getNamedItem("file_url").getNodeValue();
+            else
+                fileUrl = post.getAttributes().getNamedItem("file_url").getNodeValue();
+
             byte[] file = getImageFromUrl(new URL(fileUrl));
             if(file == null){ // if file is too big, get image from sample url instead
                 fileUrl = post.getAttributes().getNamedItem("sample_url").getNodeValue();
                 file = getImageFromUrl(new URL(fileUrl));
             }
 
+            String fileName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
+
             String postID = post.getAttributes().getNamedItem("id").getNodeValue();
-            String postUrl = URLs.imageboardPostUrls.get(imageboard.getKey()) + postID;
+            String postUrl = URLs.imageboardPostUrls.get(imageboard) + postID;
 
             String sourceUrl = post.getAttributes().getNamedItem("source").getNodeValue();
 
-            response = new ImageResponse(file, postUrl, sourceUrl);
+            response = new ImageResponse(file, fileName, postUrl, sourceUrl);
 
-
-        } catch (SAXException | IOException | ParserConfigurationException e) {
+        } catch (SAXException | ParserConfigurationException e) {
             e.printStackTrace();
         }
 
@@ -125,7 +131,7 @@ public class ConnectionHandler {
     }
 
     public byte[] getImageFromUrl(URL url) throws IOException {
-        byte[] img = new byte[Config.max_image_file_size]; // 8MB, limited by Discord
+        byte[] img = new byte[Config.max_image_file_size]; // 4MiB, limited by Discord
 
         InputStream in = url.openStream();
         int read;
