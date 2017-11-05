@@ -4,11 +4,13 @@ public class ImageResponse {
     // value object for holding URLs
 
     private byte[] imageData;
+    private String fileName;
     private String postURL;
     private String sourceURL;
 
-    public ImageResponse(byte[] imageData, String postURL, String sourceURL) {
+    public ImageResponse(byte[] imageData, String fileName, String postURL, String sourceURL) {
         this.imageData = imageData;
+        this.fileName = fileName;
         this.postURL = postURL;
         this.sourceURL = sourceURL;
     }
@@ -23,5 +25,9 @@ public class ImageResponse {
 
     public String getSourceURL() {
         return sourceURL;
+    }
+
+    public String getFileName() {
+        return fileName;
     }
 }
