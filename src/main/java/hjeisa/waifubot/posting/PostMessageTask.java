@@ -21,6 +21,16 @@ public class PostMessageTask implements Runnable {
 
     private Request request;
 
+    /*
+        procedure:
+        connect to three apis
+        from postmessagetask, get random image from one booru and retrieve image url(perhaps source)
+        how:
+            send request to each api(limit 0), collect post counts for tags
+            get random int, decide what booru to use
+            get picture from api with page id matching int, retrieve image(+ source url)
+     */
+
     public PostMessageTask(Request request) {
         this.request = request;
     }
@@ -29,6 +39,7 @@ public class PostMessageTask implements Runnable {
     public void run() {
         MessageChannel chan = request.getChannel();
 
+        // TODO: move relevant bits to own methods
         ConnectionHandler handler = new ConnectionHandler();
         Map<String,Integer> postCounts = handler.getPostCounts(request.getSearchTags());
 
@@ -76,15 +87,17 @@ public class PostMessageTask implements Runnable {
             chan.sendMessage("An unexpected error occurred while processing your request.").queue();
             return;
         }
+
+        // TODO: figure out how to use embed for source/post links
         String sourceMessage = "Post: " + response.getPostURL() + "\nSource: " + response.getSourceURL();
         chan.sendFile(response.getImageData(), response.getFileName(), null).queue(message1 ->
                 chan.sendMessage(sourceMessage).queue()
         );
 
         if(Config.debug){
+            System.out.println("File uploaded: " + response.getFileName());
             System.out.println("Requested (tags: " + request.getSearchTags() + "): #" + chan.getName() + ": " +
                     "<" + Config.bot_name + "> " + sourceMessage);
-            System.out.println("File uploaded: " + response.getFileName());
         }
     }
 }

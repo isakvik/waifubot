@@ -19,16 +19,6 @@ import java.util.Scanner;
 
 public class ConnectionHandler {
 
-    // TODO: figure out structure of things
-    /*
-        three apis
-        from postmessagetask, get random image from one booru and retrieve image url(perhaps source)
-        how:
-            send request to each api(limit 0), collect post counts for tags
-            get random int, decide what booru to use
-            get picture from api with page id matching int, retrieve image(+ source url)
-     */
-
     // returns hashmap containing postcount for results on each imageboard
     public Map<String, Integer> getPostCounts(String searchTags) {
         Map<String, Integer> postCounts = new HashMap<>();
