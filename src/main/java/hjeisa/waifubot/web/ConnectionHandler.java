@@ -133,19 +133,23 @@ public class ConnectionHandler {
     }
 
     public byte[] getImageFromUrl(URL url) throws IOException {
-        byte[] img = new byte[Config.max_image_file_size]; // 4MiB, limited by Discord
+        byte[] temp = new byte[Config.max_image_file_size]; // 4MiB, limited by Discord
 
         InputStream in = url.openStream();
+        int i;
         int read;
-        for(int i = 0; (read = in.read()) != -1; i++){
+        for(i = 0; (read = in.read()) != -1; i++){
             if(i < Config.max_image_file_size){
-                img[i] = (byte) read;
+                temp[i] = (byte) read;
             }
             else {
                 in.close();
                 return null;
             }
         }
+
+        byte[] img = new byte[i+1];
+        System.arraycopy(temp,0,img,0,i);
         in.close();
         return img;
     }
