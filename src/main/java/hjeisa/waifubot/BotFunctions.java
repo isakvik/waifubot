@@ -2,11 +2,8 @@ package hjeisa.waifubot;
 
 import hjeisa.waifubot.model.Request;
 import hjeisa.waifubot.posting.PostController;
-import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.entities.User;
-import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
-import net.dv8tion.jda.core.hooks.ListenerAdapter;
 
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
@@ -15,68 +12,35 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ServerMessageListener extends ListenerAdapter {
+public class BotFunctions {
 
     // schedules post cycles
-    private PostController postController = new PostController();
+    private static PostController postController = new PostController();
     // holds all requests not cancelled
-    private List<Request> requestList = new ArrayList<>();
+    private static List<Request> requestList = new ArrayList<>();
     // holds each user's best girl
-    private Map<User, String> bestGirlMap = new HashMap<>();
+    private static Map<User, String> bestGirlMap = new HashMap<>();
 
-
-
-    @Override
-    public void onGuildMessageReceived(GuildMessageReceivedEvent event) {
-        // anti bot security
-        // TODO: create common class for listener implementations?
-        if(event.getAuthor().isBot()) return;
-
-        if(Config.debug){
-            System.out.println("#" + event.getChannel().getName() + ": <"
-                            + event.getAuthor().getName() + "> "
-                            + event.getMessage().getContent());
-        }
-
-        try {
-            ping(event);
-            post(event);
-            postnsfw(event);
-            picture(event);
-            bestgirl(event);
-            cancel(event);
-            list(event);
-            exclude(event);
-        }
-        catch(Exception e) {
-            event.getChannel().sendMessage("An unexpected error occurred while processing your request.").queue();
-        }
-    }
-
-    ////////////////////////////////////////////////////////// functions below
-
-    private void ping(GuildMessageReceivedEvent event){
-        Message message = event.getMessage();
-        String content = message.getRawContent();
-        MessageChannel chan = message.getChannel();
-
+    public static void ping(String content, MessageChannel chan) {
         // ping function
         if(content.equalsIgnoreCase("!ping")) {
             chan.sendMessage("Pong!").queue();
         }
     }
 
-    private void post(GuildMessageReceivedEvent event){
-        Message message = event.getMessage();
-        String content = message.getRawContent();
-        MessageChannel chan = message.getChannel();
+    public static void post(String content, MessageChannel chan) {
+        // create posting cycle
+        boolean nsfw = content.toLowerCase().startsWith("!postnsfw ");
+        boolean exnsfw = content.toLowerCase().startsWith("!postexnsfw ");
 
-        // create request
-        if(content.toLowerCase().startsWith("!post ")) {
+        if(content.toLowerCase().startsWith("!post ") || nsfw || exnsfw) {
             if(content.split(" ").length >= 3){
-                int indexOfSearchTags = content.indexOf(' ',6);
-                String intervalString = content.substring(6, indexOfSearchTags);
-                String searchTags = content.substring(indexOfSearchTags + 1);
+                int durationIndex = content.indexOf(' ');
+                int searchTagIndex = content.indexOf(' ',durationIndex + 1);
+                String intervalString = content.substring(durationIndex + 1, searchTagIndex);
+                String searchTags = content.substring(searchTagIndex + 1);
+                if(!nsfw && !exnsfw) searchTags += " rating:safe";
+                if(exnsfw) searchTags += " rating:explicit";
 
                 try {
                     // Duration.parse requires "pt" prefix
@@ -95,7 +59,7 @@ public class ServerMessageListener extends ListenerAdapter {
                     }
 
                     if(Util.findRequestBySearchText(requestList, chan, searchTags) == null){
-                        Request request = new Request(event.getGuild(), event.getChannel(), intervalSeconds, searchTags);
+                        Request request = new Request(chan, intervalSeconds, searchTags);
                         requestList.add(request);
                         postController.schedulePostCycle(request);
 
@@ -120,62 +84,46 @@ public class ServerMessageListener extends ListenerAdapter {
         }
     }
 
-    private void postnsfw(GuildMessageReceivedEvent event) {
-        // TODO: fix this
-    }
-
-    private void picture(GuildMessageReceivedEvent event) {
-        Message message = event.getMessage();
-        String content = message.getRawContent();
-        MessageChannel chan = message.getChannel();
-
+    public static void picture(String content, MessageChannel chan) {
         // post one picture with tags
         if(content.toLowerCase().startsWith("!picture ")) {
             if (content.split(" ").length >= 2) {
                 String searchTags = content.substring("!picture ".length());
-                Request request = new Request(event.getGuild(), event.getChannel(), 0, searchTags);
+                Request request = new Request(chan, 0, searchTags);
                 postController.schedulePostOnce(request);
             }
         }
         else if(content.equals("!picture")){
-            Request request = new Request(event.getGuild(), event.getChannel(), 0, "");
+            Request request = new Request(chan, 0, "");
             postController.schedulePostOnce(request);
         }
     }
 
-    private void bestgirl(GuildMessageReceivedEvent event) {
+    public static void bestgirl(User user, String content, MessageChannel chan) {
         // TODO: store user's chosen best girl to file, reload on reboot
-        Message message = event.getMessage();
-        String content = message.getRawContent();
-        MessageChannel chan = message.getChannel();
-
         // posts user's best girl if one is found
         if(content.toLowerCase().startsWith("!bestgirl")){
             String girlToPost;
             // sets user's best girl
             if(content.toLowerCase().startsWith("!bestgirl set ") && content.split(" ").length >= 3){
                 girlToPost = content.substring("!bestgirl set ".length());
-                bestGirlMap.put(message.getAuthor(), girlToPost);
+                bestGirlMap.put(user, girlToPost);
                 chan.sendMessage("Ok, recognized your best girl.").queue();
             }
             else {
-                girlToPost = bestGirlMap.get(message.getAuthor());
+                girlToPost = bestGirlMap.get(user);
                 if(girlToPost == null){
                     chan.sendMessage("Set your best girl with the `!bestgirl set <character>` command first.").queue();
                     return;
                 }
                 chan.sendMessage(girlToPost + "!").queue();
             }
-            Request request = new Request(event.getGuild(), event.getChannel(), 0, girlToPost + " 1girl");
+            Request request = new Request(chan, 0, girlToPost + " 1girl");
             postController.schedulePostOnce(request);
         }
     }
 
-    private void cancel(GuildMessageReceivedEvent event){
-        Message message = event.getMessage();
-        String content = message.getRawContent();
-        MessageChannel chan = message.getChannel();
-
+    public static void cancel(String content, MessageChannel chan){
         // cancel post cycle
         if(content.toLowerCase().startsWith("!cancel ")){
             // if command has tag parameters
@@ -208,11 +156,7 @@ public class ServerMessageListener extends ListenerAdapter {
         }
     }
 
-    private void list(GuildMessageReceivedEvent event){
-        Message message = event.getMessage();
-        String content = message.getRawContent();
-        MessageChannel chan = message.getChannel();
-
+    public static void list(String content, MessageChannel chan){
         // list all current posting cycles
         if(content.toLowerCase().startsWith("!list")){
             List<Request> requestsForChannel = Util.findAllRequestsByChannel(requestList, chan);
@@ -221,9 +165,9 @@ public class ServerMessageListener extends ListenerAdapter {
                 StringBuilder str = new StringBuilder("Image posting cycles for this channel: ");
                 for(Request req : requestsForChannel){
                     str.append("\n- Tags: \"")
-                       .append(req.getSearchTags())
-                       .append("\" every ")
-                       .append(Util.parseDuration(req.getTimeInterval()));
+                            .append(req.getSearchTags())
+                            .append("\" every ")
+                            .append(Util.parseDuration(req.getTimeInterval()));
                 }
                 chan.sendMessage(str.toString()).queue();
             }
@@ -233,11 +177,7 @@ public class ServerMessageListener extends ListenerAdapter {
         }
     }
 
-    private void exclude(GuildMessageReceivedEvent event) {
-        Message message = event.getMessage();
-        String content = message.getRawContent();
-        MessageChannel chan = message.getChannel();
-
+    public static void exclude(String content, MessageChannel chan) {
         // create a personalized blacklist for each user, adding exclude tags to each request
         if(content.toLowerCase().startsWith("!exclude")){
             // TODO: implement this

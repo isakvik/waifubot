@@ -8,11 +8,11 @@ import net.dv8tion.jda.core.exceptions.RateLimitedException;
 import javax.security.auth.login.LoginException;
 
 public class Bot {
+
     public static void main(String[] args) {
         try {
             JDA api = new JDABuilder(AccountType.BOT).setToken(Config.bot_token).buildAsync();
-            api.addEventListener(new ServerMessageListener());
-            api.addEventListener(new PrivateMessageListener());
+            api.addEventListener(new BotMessageListener());
         } catch (LoginException | RateLimitedException e) {
             e.printStackTrace();
         }
