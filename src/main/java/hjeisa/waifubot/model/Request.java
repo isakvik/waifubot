@@ -1,67 +1,35 @@
 package hjeisa.waifubot.model;
 
-import net.dv8tion.jda.core.entities.Guild;
-import net.dv8tion.jda.core.entities.TextChannel;
+import net.dv8tion.jda.core.entities.MessageChannel;
 
-import java.time.Instant;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 
 public class Request {
 
-    private Guild server;
-    private TextChannel channel;
-    private long creationTime;
+    private MessageChannel channel;
 
     private long timeInterval;
     private String searchTags;
 
     public HashSet<Integer> alreadyPosted;
 
-    public Request(Guild server, TextChannel channel, long timeInterval, String searchTags) {
-        this.server = server;
+    public Request(MessageChannel channel, long timeInterval, String searchTags) {
         this.channel = channel;
         this.timeInterval = timeInterval;
         this.searchTags = searchTags;
 
-        creationTime = Instant.now().getEpochSecond();
         alreadyPosted = new HashSet<>();
     }
 
-    public Guild getServer() {
-        return server;
-    }
-
-    public void setServer(Guild server) {
-        this.server = server;
-    }
-
-    public TextChannel getChannel() {
+    public MessageChannel getChannel() {
         return channel;
-    }
-
-    public void setChannel(TextChannel channel) {
-        this.channel = channel;
     }
 
     public long getTimeInterval() {
         return timeInterval;
     }
 
-    public void setTimeInterval(long timeInterval) {
-        this.timeInterval = timeInterval;
-    }
-
     public String getSearchTags() {
         return searchTags;
-    }
-
-    public void setSearchTags(String searchText) {
-        this.searchTags = searchText;
-    }
-
-    public long getCreationTime() {
-        return creationTime;
     }
 }
