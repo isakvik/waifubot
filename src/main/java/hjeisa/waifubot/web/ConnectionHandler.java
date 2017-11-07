@@ -25,7 +25,7 @@ public class ConnectionHandler {
 
         for(Map.Entry<String, String> entry : URLs.imageboardApis.entrySet()){
             try {
-                String content = getPageContent(constructApiUrl(entry.getKey(), 0, 0, searchTags, false)); // limit=0 gives us no post results
+                String content = getPageContent(constructApiUrl(entry.getKey(), 0, 0, searchTags)); // limit=0 gives us no post results
                 if(content == null)
                     content = "";
                 InputStream is = new ByteArrayInputStream(content.getBytes());
@@ -64,30 +64,15 @@ public class ConnectionHandler {
     }
 
     // creates URL based on parameters
-    public URL constructApiUrl(String imageboard, int limit, int page, String searchTags, boolean nsfw) throws MalformedURLException {
-        String[] tags = searchTags.split(" ");
-        for(String tag : tags)
-            if(tag.equals("rating:explicit") || tag.equals("rating:questionable"))
-                nsfw = true;
-
+    public URL constructApiUrl(String imageboard, int limit, int page, String searchTags) throws MalformedURLException {
         try {
             if(imageboard.equals("konachan")){
                 if(limit == 0)
                     limit++; // limit of 0 doesn't work
                 page++; // konachan's pages are indexed at 1
-                // rating:safe added to tags to ensure results are safe for work
-                return new URL(URLs.imageboardApis.get(imageboard) + "limit=" + limit + "&page=" + page + "&tags=" +
-                        URLEncoder.encode((nsfw ? "" : "rating:safe ") + searchTags, "UTF-8"));
             }
-            else if(imageboard.equals("safebooru")){
-                return new URL(URLs.imageboardApis.get(imageboard) + "limit=" + limit + "&pid=" + page + "&tags=" +
-                        URLEncoder.encode(searchTags, "UTF-8"));
-            }
-            else if(imageboard.equals("gelbooru")){
-                // rating:safe added to tags to ensure results are safe for work
-                return new URL(URLs.imageboardApis.get(imageboard) + "limit=" + limit + "&pid=" + page + "&tags=" +
-                        URLEncoder.encode((nsfw ? "" : "rating:safe ") + searchTags, "UTF-8"));
-            }
+            return new URL(URLs.imageboardApis.get(imageboard) + "limit=" + limit + "&pid=" + page + "&tags=" +
+                    URLEncoder.encode(searchTags, "UTF-8"));
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
@@ -108,11 +93,10 @@ public class ConnectionHandler {
             Node post = posts.getFirstChild();
 
             String fileUrl;
-            // safebooru does not use protocol in their file links
-            if(imageboard.equals("safebooru") || imageboard.equals("konachan"))
-                fileUrl = "http:" + post.getAttributes().getNamedItem("file_url").getNodeValue();
-            else
-                fileUrl = post.getAttributes().getNamedItem("file_url").getNodeValue();
+            fileUrl = post.getAttributes().getNamedItem("file_url").getNodeValue();
+            // safebooru and konachan do not use protocol in their file links
+            if(!fileUrl.startsWith("http"))
+                fileUrl = "http:" + fileUrl;
 
             byte[] file = getImageFromUrl(new URL(fileUrl));
             if(file == null){ // if file is too big, get image from sample url instead

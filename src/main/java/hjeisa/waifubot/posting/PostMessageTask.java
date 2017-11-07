@@ -4,18 +4,14 @@ import hjeisa.waifubot.Config;
 import hjeisa.waifubot.model.ImageResponse;
 import hjeisa.waifubot.model.Request;
 import hjeisa.waifubot.web.ConnectionHandler;
-import hjeisa.waifubot.web.URLs;
-import net.dv8tion.jda.core.EmbedBuilder;
-import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.MessageChannel;
-import net.dv8tion.jda.core.entities.MessageEmbed;
-import net.dv8tion.jda.core.entities.impl.MessageImpl;
 
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.*;
-import java.util.function.Consumer;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Random;
 
 public class PostMessageTask implements Runnable {
 
@@ -85,7 +81,7 @@ public class PostMessageTask implements Runnable {
 
             URL url;
             try {
-                url = handler.constructApiUrl(selectedImageboard, 1, page, request.getSearchTags(), false);
+                url = handler.constructApiUrl(selectedImageboard, 1, page, request.getSearchTags());
             } catch (MalformedURLException e) {
                 e.printStackTrace();
                 chan.sendMessage("An unexpected error occurred while processing your request.").queue();
