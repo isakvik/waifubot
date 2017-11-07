@@ -57,7 +57,10 @@ public class ConnectionHandler {
             return null;
         }
         in.close();
-        return content.substring(content.lastIndexOf("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"));
+        /*  scrubs unnecessary whitespace from api results
+            this is necessary because konachan has whitespace in their api results,
+            and that breaks the XML parsing as it considers <posts> a text content tag */
+        return content.replaceAll(">\\s+?<","><");
     }
 
     // creates URL based on parameters
@@ -105,7 +108,8 @@ public class ConnectionHandler {
             Node post = posts.getFirstChild();
 
             String fileUrl;
-            if(imageboard.equals("safebooru"))  // safebooru does not use protocol in their
+            // safebooru does not use protocol in their file links
+            if(imageboard.equals("safebooru") || imageboard.equals("konachan"))
                 fileUrl = "http:" + post.getAttributes().getNamedItem("file_url").getNodeValue();
             else
                 fileUrl = post.getAttributes().getNamedItem("file_url").getNodeValue();
@@ -125,7 +129,8 @@ public class ConnectionHandler {
 
             response = new ImageResponse(file, fileName, postUrl, sourceUrl);
 
-        } catch (SAXException | ParserConfigurationException e) {
+        }
+        catch (SAXException | ParserConfigurationException e) {
             e.printStackTrace();
         }
 

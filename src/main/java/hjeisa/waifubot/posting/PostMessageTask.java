@@ -60,6 +60,7 @@ public class PostMessageTask implements Runnable {
 
             Random rng = new Random();
             int random = rng.nextInt(sum);
+
             // prevent already posted images from reappearing for the same request
             while(request.alreadyPosted.contains(random)){
                 random++;
@@ -99,21 +100,22 @@ public class PostMessageTask implements Runnable {
             ImageResponse response = null;
             try {
                 response = handler.parseResponse(selectedImageboard, content);
-            } catch (Exception e) {
-                e.printStackTrace();
+            } catch (NullPointerException npe) {
+                npe.printStackTrace();
                 chan.sendMessage("An unexpected error occurred while processing your request.").queue();
-                System.out.println("Tags: " + request.getSearchTags());
-                System.out.println("Selected imageboard: " + selectedImageboard);
+                System.out.println("tags: " + request.getSearchTags());
+                System.out.println("selected imageboard: " + selectedImageboard);
 
                 System.out.println(page);
                 return;
             }
 
             // TODO: figure out how to use embed for source/post links
+            // links cased in <> removes thumbnails/embeds
             StringBuilder sourceMessage = new StringBuilder("");
-            sourceMessage.append("Post: ");
+            sourceMessage.append("Post: <");
             sourceMessage.append(response.getPostURL());
-            sourceMessage.append("\nSource: ");
+            sourceMessage.append(">\nSource: ");
             sourceMessage.append(response.getSourceURL().isEmpty() ? "none" : "<" + response.getSourceURL() + ">");
 
             chan.sendFile(response.getImageData(), response.getFileName(), null).queue(message1 ->
