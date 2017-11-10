@@ -71,7 +71,8 @@ public class BotFunctions {
                     }
 
                     if(Util.findRequestBySearchText(requestList, chan, searchTags) == null){
-                        Request request = new Request(chan, intervalSeconds, searchTags);
+                        Request request = new Request(chan, intervalSeconds,
+                                searchTags + " " + excludeMap.getOrDefault(user.getIdLong(), ""));
                         requestList.add(request);
                         postController.schedulePostCycle(request);
 
@@ -118,7 +119,7 @@ public class BotFunctions {
             }
             
             Request request = new Request(chan, 0,
-                    searchTags + " " + excludeMap.get(user.getIdLong()));
+                    searchTags + " " + excludeMap.getOrDefault(user.getIdLong(), ""));
             postController.schedulePostOnce(request);
         }
     }
@@ -148,7 +149,7 @@ public class BotFunctions {
                 chan.sendMessage(Util.cleanNameTag(girlToPost) + "!").queue();
             }
             Request request = new Request(chan, 0,
-                    girlToPost + " 1girl " + excludeMap.get(user.getIdLong()));
+                    girlToPost + " 1girl " + excludeMap.getOrDefault(user.getIdLong(), ""));
             postController.schedulePostOnce(request);
         }
     }
