@@ -232,6 +232,18 @@ public class BotFunctions {
     static void excludes(User user, String content, MessageChannel chan) {
         // TODO: implement this
         // list current user's excludes, or clear excludes
+        if(content.toLowerCase().equals("!excludes")){
+            String excludes = excludeMap.get(user.getIdLong());
+            if(excludes == null){
+                chan.sendMessage("None given.").queue();
+            }
+            chan.sendMessage("Your exclude tags: " + excludes).queue();
+        }
+        else if(content.toLowerCase().equals("!excludes clear")){
+            excludeMap.remove(user.getIdLong());
+            saveMap(excludeMap, Config.exclude_data_filename);
+            chan.sendMessage("Ok, removed all excludes.").queue();
+        }
     }
 
     ///////////////////////////////////////////////////////// helpers
