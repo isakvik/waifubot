@@ -34,7 +34,7 @@ public class BotFunctions {
         }
     }
 
-    static void post(String content, MessageChannel chan) {
+    static void post(User user, String content, MessageChannel chan) {
         // create posting cycle
         boolean nsfw = content.toLowerCase().startsWith("!postnsfw ");
         boolean exnsfw = content.toLowerCase().startsWith("!postexnsfw ");  // exclusively*
@@ -96,7 +96,7 @@ public class BotFunctions {
         }
     }
 
-    static void picture(String content, MessageChannel chan) {
+    static void picture(User user, String content, MessageChannel chan) {
         // create posting cycle
         boolean nsfw = content.toLowerCase().startsWith("!picturensfw ");
         boolean exnsfw = content.toLowerCase().startsWith("!pictureexnsfw ");
@@ -108,19 +108,17 @@ public class BotFunctions {
         }
 
         // post one picture with tags
-        if(content.toLowerCase().startsWith("!picture ") || nsfw || exnsfw) {
-            int durationIndex = content.indexOf(' ');
-            int searchTagIndex = content.indexOf(' ',durationIndex + 1);
-            String intervalString = content.substring(durationIndex + 1, searchTagIndex);
-            String searchTags = content.substring(searchTagIndex + 1);
-            if(!nsfw && !exnsfw) searchTags += " rating:safe";
-            if(exnsfw) searchTags += " rating:explicit";
+        if(content.toLowerCase().startsWith("!picture") || nsfw || exnsfw) {
+            int searchTagIndex = content.indexOf(' ');
+            String searchTags = "";
+            if(searchTagIndex != -1){
+                searchTags = content.substring(searchTagIndex + 1);
+                if(!nsfw && !exnsfw) searchTags += " rating:safe";
+                if(exnsfw) searchTags += " rating:explicit";
+            }
             
-            Request request = new Request(chan, 0, searchTags);
-            postController.schedulePostOnce(request);
-        }
-        else if(content.equals("!picture")){
-            Request request = new Request(chan, 0, "");
+            Request request = new Request(chan, 0,
+                    searchTags + " " + excludeMap.get(user.getIdLong()));
             postController.schedulePostOnce(request);
         }
     }
@@ -149,7 +147,8 @@ public class BotFunctions {
                 }
                 chan.sendMessage(Util.cleanNameTag(girlToPost) + "!").queue();
             }
-            Request request = new Request(chan, 0, girlToPost + " 1girl");
+            Request request = new Request(chan, 0,
+                    girlToPost + " 1girl " + excludeMap.get(user.getIdLong()));
             postController.schedulePostOnce(request);
         }
     }
@@ -224,7 +223,14 @@ public class BotFunctions {
             // will update list
             excludeMap.put(user.getIdLong(), excludeList.toString());
             saveMap(excludeMap, Config.exclude_data_filename);
+
+            chan.sendMessage("Ok. Exclude list is now: " + excludeList).queue();
         }
+    }
+
+    static void excludes(User user, String content, MessageChannel chan) {
+        // TODO: implement this
+        // list current user's excludes, or clear excludes
     }
 
     ///////////////////////////////////////////////////////// helpers

@@ -35,8 +35,8 @@ public class BotMessageListener extends ListenerAdapter {
         }
 
         BotFunctions.ping(content, chan);
-        BotFunctions.post(content, chan);
-        BotFunctions.picture(content, chan);
+        BotFunctions.post(user, content, chan);
+        BotFunctions.picture(user, content, chan);
         BotFunctions.bestgirl(user, content, chan);
         BotFunctions.cancel(content, chan);
         BotFunctions.list(content, chan);
