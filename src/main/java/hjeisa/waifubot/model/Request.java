@@ -32,4 +32,15 @@ public class Request {
     public String getSearchTags() {
         return searchTags;
     }
+
+    public String getSearchTagsWithoutExcludes() {
+        String[] tags = searchTags.split(" ");
+        StringBuilder sb = new StringBuilder();
+        for(String tag : tags){
+            if(!tag.startsWith("-")){
+                sb.append(tag).append(" ");
+            }
+        }
+        return sb.toString();
+    }
 }

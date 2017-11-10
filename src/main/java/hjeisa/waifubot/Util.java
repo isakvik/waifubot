@@ -3,8 +3,7 @@ package hjeisa.waifubot;
 import hjeisa.waifubot.model.Request;
 import net.dv8tion.jda.core.entities.MessageChannel;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class Util {
 
@@ -24,10 +23,15 @@ public class Util {
     }
 
     // returns one request where the search tags and channel match, or null
-    public static Request findRequestBySearchText(List<Request> list, MessageChannel chan, String searchWords){
+    public static Request findRequestBySearchText(List<Request> list, MessageChannel chan, String searchTags){
         for(Request req : list){
-            if(req.getSearchTags().equals(searchWords) && req.getChannel().equals(chan)){
-                return req;
+            if(req.getChannel().equals(chan)){
+                HashSet<String> tagSet = new HashSet<>(
+                        Arrays.asList(searchTags.split(" ")));
+                HashSet<String> requestTagSet = new HashSet<>(
+                        Arrays.asList(req.getSearchTagsWithoutExcludes().split(" ")));
+                if(tagSet.equals(requestTagSet))
+                    return req;
             }
         }
 
