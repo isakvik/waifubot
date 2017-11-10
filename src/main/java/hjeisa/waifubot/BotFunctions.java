@@ -36,16 +36,17 @@ public class BotFunctions {
 
     static void post(User user, String content, MessageChannel chan) {
         // create posting cycle
-        boolean nsfw = content.toLowerCase().startsWith("!postnsfw ");
-        boolean exnsfw = content.toLowerCase().startsWith("!postexnsfw ");  // exclusively*
+        boolean nsfw = content.toLowerCase().startsWith("!postnsfw");
+        boolean exnsfw = content.toLowerCase().startsWith("!postexnsfw");  // exclusively*
 
         if(nsfw || exnsfw){
             if(chan instanceof TextChannel && !((TextChannel) chan).isNSFW()){
                 chan.sendMessage("This is not set as an NSFW channel.").queue();
+                return;
             }
         }
 
-        if(content.toLowerCase().startsWith("!post ") || nsfw || exnsfw) {
+        if(content.toLowerCase().startsWith("!post") || nsfw || exnsfw) {
             if(content.split(" ").length >= 3){
                 int durationIndex = content.indexOf(' ');
                 int searchTagIndex = content.indexOf(' ',durationIndex + 1);
@@ -66,9 +67,6 @@ public class BotFunctions {
                                     Util.parseDuration(Config.min_posting_interval) + "", intervalString, 0);
                         }
                     }
-                    else if(intervalSeconds == 0){
-                        throw new Exception("Time can't be zero.");
-                    }
 
                     if(Util.findRequestBySearchText(requestList, chan, searchTags) == null){
                         Request request = new Request(chan, intervalSeconds,
@@ -84,27 +82,28 @@ public class BotFunctions {
                     }
                 }
                 catch (DateTimeParseException dtpe){
-                    chan.sendMessage("Could not find duration. Proper usage is `!post <duration> <tags>`").queue();
+                    chan.sendMessage("Could not find duration. Proper usage is `!post <interval> <search tags>`").queue();
                 }
                 catch (Exception e) {
                     chan.sendMessage(e.getMessage() + ".").queue();
                 }
             }
             else {
-                chan.sendMessage("Invalid number of arguments. Correct form is:\n"+
-                        "`!post <interval> <search string>`").queue();
+                chan.sendMessage("Invalid arguments. Correct form is:\n"+
+                        "`!post <interval> <search tags>`").queue();
             }
         }
     }
 
     static void picture(User user, String content, MessageChannel chan) {
         // create posting cycle
-        boolean nsfw = content.toLowerCase().startsWith("!picturensfw ");
-        boolean exnsfw = content.toLowerCase().startsWith("!pictureexnsfw ");
+        boolean nsfw = content.toLowerCase().startsWith("!picturensfw");
+        boolean exnsfw = content.toLowerCase().startsWith("!pictureexnsfw");
 
         if(nsfw || exnsfw){
             if(chan instanceof TextChannel && !((TextChannel) chan).isNSFW()){
                 chan.sendMessage("This is not set as an NSFW channel.").queue();
+                return;
             }
         }
 
@@ -209,7 +208,7 @@ public class BotFunctions {
     }
 
     static void exclude(User user, String content, MessageChannel chan) {
-        // TODO: don't add duplicates
+        // TODO: figure out why extra space appears in list
         // create a personalized blacklist for each user, adding exclude tags to each request
         if(content.toLowerCase().startsWith("!exclude ")){
             ArrayList<String> tagList = new ArrayList<>(Arrays.asList(
@@ -219,6 +218,7 @@ public class BotFunctions {
             boolean changed = false;
 
             for(String tag : tagList){
+                tag = tag.replaceAll("\\s"," ");
                 if(!tag.startsWith("-")){
                     tag = "-" + tag;
                 }
@@ -235,8 +235,13 @@ public class BotFunctions {
 
             // will update list
                 excludeMap.put(user.getIdLong(), sb.toString());
-                saveMap(excludeMap, Config.exclude_data_filename);
-                chan.sendMessage("Ok. Exclude list is now: " + sb).queue();
+                if(!saveMap(excludeMap, Config.exclude_data_filename)){
+                    chan.sendMessage("Couldn't save your exclude list, probably due to me being in test mode." +
+                            " Sorry!").queue();
+                }
+                else {
+                    chan.sendMessage("Ok. Exclude list is now: " + sb).queue();
+                }
             }
             else {
                 chan.sendMessage("Exclude list is unchanged: " + excludeMap.get(user.getIdLong())).queue();
@@ -250,6 +255,7 @@ public class BotFunctions {
             String excludes = excludeMap.get(user.getIdLong());
             if(excludes == null){
                 chan.sendMessage("None given.").queue();
+                return;
             }
             chan.sendMessage("Your exclude tags: " + excludes).queue();
         }

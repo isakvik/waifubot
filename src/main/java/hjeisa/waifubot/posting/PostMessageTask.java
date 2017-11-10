@@ -45,7 +45,7 @@ public class PostMessageTask implements Runnable {
                 sum += val;
 
             if (sum == 0) {
-                chan.sendMessage("No pictures found matching these tags in any imageboards I'm set to look in.").queue();
+                chan.sendMessage("I couldn't find any pictures matching these tags: " + request.getSearchTags()).queue();
                 return;
             }
 
