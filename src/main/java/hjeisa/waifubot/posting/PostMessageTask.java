@@ -109,10 +109,10 @@ public class PostMessageTask implements Runnable {
             // TODO: figure out how to use embed for source/post links
             // links cased in <> removes thumbnails/embeds
             StringBuilder sourceMessage = new StringBuilder("");
-            sourceMessage.append("Post: <");
-            sourceMessage.append(response.getPostURL());
-            sourceMessage.append(">\nSource: ");
-            sourceMessage.append(response.getSourceURL().isEmpty() ? "none" : "<" + response.getSourceURL() + ">");
+            sourceMessage.append("Post: <")
+                    .append(response.getPostURL())
+                    .append(">\nSource: ")
+                    .append(response.getSourceURL().isEmpty() ? "none" : "<" + response.getSourceURL() + ">");
 
             chan.sendFile(response.getImageData(), response.getFileName(), null).queue(message1 ->
                     chan.sendMessage(sourceMessage.toString()).queue()
