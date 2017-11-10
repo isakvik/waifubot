@@ -52,9 +52,9 @@ public class BotFunctions {
                 int searchTagIndex = content.indexOf(' ',durationIndex + 1);
                 String intervalString = content.substring(durationIndex + 1, searchTagIndex);
                 String searchTags = content.substring(searchTagIndex + 1);
-                if(nsfw) searchTags +=      " -rating:safe";
-                if(exnsfw) searchTags +=    " rating:explicit";
-                else searchTags +=          " rating:safe";
+                if(nsfw) searchTags +=        " -rating:safe";
+                else if(exnsfw) searchTags += " rating:explicit";
+                else searchTags +=            " rating:safe";
 
                 try {
                     // Duration.parse requires "pt" prefix
@@ -114,9 +114,9 @@ public class BotFunctions {
             String searchTags = "";
             if(searchTagIndex != -1){
                 searchTags = content.substring(searchTagIndex + 1);
-                if(nsfw) searchTags +=      " -rating:safe";
-                if(exnsfw) searchTags +=    " rating:explicit";
-                else searchTags +=          " rating:safe";
+                if(nsfw) searchTags +=        " -rating:safe";
+                else if(exnsfw) searchTags += " rating:explicit";
+                else searchTags +=            " rating:safe";
             }
             
             Request request = new Request(chan, 0,
