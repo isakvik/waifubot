@@ -19,7 +19,7 @@ public class Bot {
             JDA api = new JDABuilder(AccountType.BOT).setToken(Config.bot_token).buildAsync();
             api.addEventListener(new BotMessageListener());
 
-            BotFunctions.loadBestGirls();
+            BotFunctions.initialize();
         } catch (LoginException | RateLimitedException e) {
             e.printStackTrace();
         }

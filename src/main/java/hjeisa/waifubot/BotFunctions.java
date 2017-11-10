@@ -5,7 +5,6 @@ import hjeisa.waifubot.posting.PostController;
 import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.User;
-import net.dv8tion.jda.core.entities.impl.UserImpl;
 
 import java.io.*;
 import java.time.Duration;
@@ -20,6 +19,13 @@ public class BotFunctions {
     private static List<Request> requestList = new ArrayList<>();
     // holds each user's best girl
     private static Map<Long, String> bestGirlMap = new HashMap<>();
+    // holds each user's exclude list
+    private static Map<Long, String> excludeMap = new HashMap<>();
+
+    static void initialize(){
+        BotFunctions.loadMap(bestGirlMap, Config.best_girl_data_filename);
+        BotFunctions.loadMap(excludeMap, Config.exclude_data_filename);
+    }
 
     static void ping(String content, MessageChannel chan) {
         // ping function
@@ -127,11 +133,12 @@ public class BotFunctions {
             if(content.toLowerCase().startsWith("!bestgirl set ") && content.split(" ").length >= 3){
                 girlToPost = content.substring("!bestgirl set ".length());
                 bestGirlMap.put(user.getIdLong(), girlToPost);
-                chan.sendMessage("Ok, recognized your best girl.").queue();
-
-                if(!saveBestGirls()){
+                if(!saveMap(bestGirlMap, Config.best_girl_data_filename)){
                     chan.sendMessage("Ahh, I couldn't save your best girl to my data file. " +
                             "I'll keep it in mind until I restart, though!").queue();
+                }
+                else {
+                    chan.sendMessage("Ok, recognized your best girl.").queue();
                 }
             }
             else {
@@ -201,23 +208,35 @@ public class BotFunctions {
         }
     }
 
-    static void exclude(String content, MessageChannel chan) {
+    static void exclude(User user, String content, MessageChannel chan) {
         // create a personalized blacklist for each user, adding exclude tags to each request
-        if(content.toLowerCase().startsWith("!exclude")){
-            // TODO: implement this
+        if(content.toLowerCase().startsWith("!exclude ")){
+            String[] tags = content.substring("!exclude ".length()).split(" ");
+            StringBuilder excludeList = new StringBuilder(excludeMap.getOrDefault(user.getIdLong(), ""));
+
+            for(String tag : tags){
+                if(!tag.startsWith("-")){
+                    tag = "-" + tag;
+                }
+                excludeList.append(tag);
+                excludeList.append(" ");
+            }
+            // will update list
+            excludeMap.put(user.getIdLong(), excludeList.toString());
+            saveMap(excludeMap, Config.exclude_data_filename);
         }
     }
 
-    ///////////////////////////////////////////////////////// save from/load to best girl map
+    ///////////////////////////////////////////////////////// helpers
 
-    private static boolean saveBestGirls(){
-        File bestGirlFile = new File(Config.data_file_path + "bestgirls.txt");
+    private static boolean saveMap(Map<Long,String> map, String fileName){
+        File mapFile = new File(Config.data_file_path + fileName);
         try {
-            if(!bestGirlFile.exists())
-                bestGirlFile.createNewFile();
+            if(!mapFile.exists())
+                mapFile.createNewFile();
 
-            BufferedWriter out = new BufferedWriter(new FileWriter(bestGirlFile));
-            for(Map.Entry<Long,String> entry : bestGirlMap.entrySet()){
+            BufferedWriter out = new BufferedWriter(new FileWriter(mapFile));
+            for(Map.Entry<Long,String> entry : map.entrySet()){
                 out.write(entry.getKey() + " " + entry.getValue() + "\n");
             }
             out.close();
@@ -229,19 +248,19 @@ public class BotFunctions {
         return true;
     }
 
-    static void loadBestGirls(){
-        File bestGirlFile = new File(Config.data_file_path + "bestgirls.txt");
-        if(!bestGirlFile.exists())
+    private static void loadMap(Map<Long,String> map, String filename){
+        File mapFile = new File(Config.data_file_path + filename);
+        if(!mapFile.exists())
             return;
 
         try {
-            BufferedReader in = new BufferedReader(new FileReader(bestGirlFile));
+            BufferedReader in = new BufferedReader(new FileReader(mapFile));
             String line;
             while((line = in.readLine()) != null){
                 int indexOfDelimiter = line.indexOf(' ');
                 long userID = Long.parseLong(line.substring(0, indexOfDelimiter));
-                String bestGirl = line.substring(indexOfDelimiter + 1);
-                bestGirlMap.put(userID, bestGirl);
+                String data = line.substring(indexOfDelimiter + 1);
+                map.put(userID, data);
             }
         }
         catch (IOException e){
