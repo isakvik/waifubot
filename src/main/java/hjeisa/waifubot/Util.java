@@ -17,6 +17,12 @@ public class Util {
         return String.format("%02d:%02d:%02d", hours, minutes, seconds);
     }
 
+    // remove parantheses, capitalize first letter
+    public static String cleanNameTag(String tag) {
+        tag = tag.replaceAll("\\(.*\\)","");
+        return tag.substring(0,1).toUpperCase() + tag.substring(1);
+    }
+
     // returns one request where the search tags and channel match, or null
     public static Request findRequestBySearchText(List<Request> list, MessageChannel chan, String searchWords){
         for(Request req : list){

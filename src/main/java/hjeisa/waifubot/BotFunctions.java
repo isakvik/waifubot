@@ -3,14 +3,14 @@ package hjeisa.waifubot;
 import hjeisa.waifubot.model.Request;
 import hjeisa.waifubot.posting.PostController;
 import net.dv8tion.jda.core.entities.MessageChannel;
+import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.User;
+import net.dv8tion.jda.core.entities.impl.UserImpl;
 
+import java.io.*;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class BotFunctions {
 
@@ -19,19 +19,25 @@ public class BotFunctions {
     // holds all requests not cancelled
     private static List<Request> requestList = new ArrayList<>();
     // holds each user's best girl
-    private static Map<User, String> bestGirlMap = new HashMap<>();
+    private static Map<Long, String> bestGirlMap = new HashMap<>();
 
-    public static void ping(String content, MessageChannel chan) {
+    static void ping(String content, MessageChannel chan) {
         // ping function
         if(content.equalsIgnoreCase("!ping")) {
             chan.sendMessage("Pong!").queue();
         }
     }
 
-    public static void post(String content, MessageChannel chan) {
+    static void post(String content, MessageChannel chan) {
         // create posting cycle
         boolean nsfw = content.toLowerCase().startsWith("!postnsfw ");
-        boolean exnsfw = content.toLowerCase().startsWith("!postexnsfw ");
+        boolean exnsfw = content.toLowerCase().startsWith("!postexnsfw ");  // exclusively*
+
+        if(nsfw || exnsfw){
+            if(chan instanceof TextChannel && !((TextChannel) chan).isNSFW()){
+                chan.sendMessage("This is not set as an NSFW channel.").queue();
+            }
+        }
 
         if(content.toLowerCase().startsWith("!post ") || nsfw || exnsfw) {
             if(content.split(" ").length >= 3){
@@ -84,14 +90,28 @@ public class BotFunctions {
         }
     }
 
-    public static void picture(String content, MessageChannel chan) {
-        // post one picture with tags
-        if(content.toLowerCase().startsWith("!picture ")) {
-            if (content.split(" ").length >= 2) {
-                String searchTags = content.substring("!picture ".length());
-                Request request = new Request(chan, 0, searchTags);
-                postController.schedulePostOnce(request);
+    static void picture(String content, MessageChannel chan) {
+        // create posting cycle
+        boolean nsfw = content.toLowerCase().startsWith("!picturensfw ");
+        boolean exnsfw = content.toLowerCase().startsWith("!pictureexnsfw ");
+
+        if(nsfw || exnsfw){
+            if(chan instanceof TextChannel && !((TextChannel) chan).isNSFW()){
+                chan.sendMessage("This is not set as an NSFW channel.").queue();
             }
+        }
+
+        // post one picture with tags
+        if(content.toLowerCase().startsWith("!picture ") || nsfw || exnsfw) {
+            int durationIndex = content.indexOf(' ');
+            int searchTagIndex = content.indexOf(' ',durationIndex + 1);
+            String intervalString = content.substring(durationIndex + 1, searchTagIndex);
+            String searchTags = content.substring(searchTagIndex + 1);
+            if(!nsfw && !exnsfw) searchTags += " rating:safe";
+            if(exnsfw) searchTags += " rating:explicit";
+            
+            Request request = new Request(chan, 0, searchTags);
+            postController.schedulePostOnce(request);
         }
         else if(content.equals("!picture")){
             Request request = new Request(chan, 0, "");
@@ -99,31 +119,35 @@ public class BotFunctions {
         }
     }
 
-    public static void bestgirl(User user, String content, MessageChannel chan) {
-        // TODO: store user's chosen best girl to file, reload on reboot
+    static void bestgirl(User user, String content, MessageChannel chan) {
         // posts user's best girl if one is found
-        if(content.toLowerCase().startsWith("!bestgirl")){
+        if(content.toLowerCase().startsWith("!bestgirl")) {
             String girlToPost;
             // sets user's best girl
             if(content.toLowerCase().startsWith("!bestgirl set ") && content.split(" ").length >= 3){
                 girlToPost = content.substring("!bestgirl set ".length());
-                bestGirlMap.put(user, girlToPost);
+                bestGirlMap.put(user.getIdLong(), girlToPost);
                 chan.sendMessage("Ok, recognized your best girl.").queue();
+
+                if(!saveBestGirls()){
+                    chan.sendMessage("Ahh, I couldn't save your best girl to my data file. " +
+                            "I'll keep it in mind until I restart, though!").queue();
+                }
             }
             else {
-                girlToPost = bestGirlMap.get(user);
+                girlToPost = bestGirlMap.get(user.getIdLong());
                 if(girlToPost == null){
                     chan.sendMessage("Set your best girl with the `!bestgirl set <character>` command first.").queue();
                     return;
                 }
-                chan.sendMessage(girlToPost + "!").queue();
+                chan.sendMessage(Util.cleanNameTag(girlToPost) + "!").queue();
             }
             Request request = new Request(chan, 0, girlToPost + " 1girl");
             postController.schedulePostOnce(request);
         }
     }
 
-    public static void cancel(String content, MessageChannel chan){
+    static void cancel(String content, MessageChannel chan){
         // cancel post cycle
         if(content.toLowerCase().startsWith("!cancel ")){
             // if command has tag parameters
@@ -156,7 +180,7 @@ public class BotFunctions {
         }
     }
 
-    public static void list(String content, MessageChannel chan){
+    static void list(String content, MessageChannel chan){
         // list all current posting cycles
         if(content.toLowerCase().startsWith("!list")){
             List<Request> requestsForChannel = Util.findAllRequestsByChannel(requestList, chan);
@@ -177,10 +201,51 @@ public class BotFunctions {
         }
     }
 
-    public static void exclude(String content, MessageChannel chan) {
+    static void exclude(String content, MessageChannel chan) {
         // create a personalized blacklist for each user, adding exclude tags to each request
         if(content.toLowerCase().startsWith("!exclude")){
             // TODO: implement this
+        }
+    }
+
+    ///////////////////////////////////////////////////////// save from/load to best girl map
+
+    private static boolean saveBestGirls(){
+        File bestGirlFile = new File(Config.data_file_path + "bestgirls.txt");
+        try {
+            if(!bestGirlFile.exists())
+                bestGirlFile.createNewFile();
+
+            BufferedWriter out = new BufferedWriter(new FileWriter(bestGirlFile));
+            for(Map.Entry<Long,String> entry : bestGirlMap.entrySet()){
+                out.write(entry.getKey() + " " + entry.getValue() + "\n");
+            }
+            out.close();
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+
+    static void loadBestGirls(){
+        File bestGirlFile = new File(Config.data_file_path + "bestgirls.txt");
+        if(!bestGirlFile.exists())
+            return;
+
+        try {
+            BufferedReader in = new BufferedReader(new FileReader(bestGirlFile));
+            String line;
+            while((line = in.readLine()) != null){
+                int indexOfDelimiter = line.indexOf(' ');
+                long userID = Long.parseLong(line.substring(0, indexOfDelimiter));
+                String bestGirl = line.substring(indexOfDelimiter + 1);
+                bestGirlMap.put(userID, bestGirl);
+            }
+        }
+        catch (IOException e){
+            e.printStackTrace();
         }
     }
 }
