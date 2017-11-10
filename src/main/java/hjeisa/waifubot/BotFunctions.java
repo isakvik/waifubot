@@ -209,28 +209,42 @@ public class BotFunctions {
     }
 
     static void exclude(User user, String content, MessageChannel chan) {
+        // TODO: don't add duplicates
         // create a personalized blacklist for each user, adding exclude tags to each request
         if(content.toLowerCase().startsWith("!exclude ")){
-            String[] tags = content.substring("!exclude ".length()).split(" ");
-            StringBuilder excludeList = new StringBuilder(excludeMap.getOrDefault(user.getIdLong(), ""));
+            ArrayList<String> tagList = new ArrayList<>(Arrays.asList(
+                    content.substring("!exclude ".length()).split(" ")));
+            ArrayList<String> excludeList = new ArrayList<>(Arrays.asList(
+                    excludeMap.getOrDefault(user.getIdLong(), "").split(" ")));
+            boolean changed = false;
 
-            for(String tag : tags){
+            for(String tag : tagList){
                 if(!tag.startsWith("-")){
                     tag = "-" + tag;
                 }
-                excludeList.append(tag);
-                excludeList.append(" ");
+                if(!excludeList.contains(tag)){
+                    excludeList.add(tag);
+                    changed = true;
+                }
             }
-            // will update list
-            excludeMap.put(user.getIdLong(), excludeList.toString());
-            saveMap(excludeMap, Config.exclude_data_filename);
 
-            chan.sendMessage("Ok. Exclude list is now: " + excludeList).queue();
+            if(changed){
+                StringBuilder sb = new StringBuilder();
+                for(String exclude : excludeList)
+                    sb.append(exclude).append(" ");
+
+            // will update list
+                excludeMap.put(user.getIdLong(), sb.toString());
+                saveMap(excludeMap, Config.exclude_data_filename);
+                chan.sendMessage("Ok. Exclude list is now: " + sb).queue();
+            }
+            else {
+                chan.sendMessage("Exclude list is unchanged: " + excludeMap.get(user.getIdLong())).queue();
+            }
         }
     }
 
     static void excludes(User user, String content, MessageChannel chan) {
-        // TODO: implement this
         // list current user's excludes, or clear excludes
         if(content.toLowerCase().equals("!excludes")){
             String excludes = excludeMap.get(user.getIdLong());

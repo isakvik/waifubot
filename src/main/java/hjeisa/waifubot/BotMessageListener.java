@@ -41,5 +41,6 @@ public class BotMessageListener extends ListenerAdapter {
         BotFunctions.cancel(content, chan);
         BotFunctions.list(content, chan);
         BotFunctions.exclude(user, content, chan);
+        BotFunctions.excludes(user, content, chan);
     }
 }
