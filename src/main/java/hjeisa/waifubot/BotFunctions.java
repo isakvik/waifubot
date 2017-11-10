@@ -52,7 +52,7 @@ public class BotFunctions {
                 int searchTagIndex = content.indexOf(' ',durationIndex + 1);
                 String intervalString = content.substring(durationIndex + 1, searchTagIndex);
                 String searchTags = content.substring(searchTagIndex + 1);
-                if(!nsfw && !exnsfw) searchTags += " rating:safe";
+                if(nsfw) searchTags += " -rating:safe";
                 if(exnsfw) searchTags += " rating:explicit";
 
                 try {
@@ -113,7 +113,7 @@ public class BotFunctions {
             String searchTags = "";
             if(searchTagIndex != -1){
                 searchTags = content.substring(searchTagIndex + 1);
-                if(!nsfw && !exnsfw) searchTags += " rating:safe";
+                if(nsfw) searchTags += " -rating:safe";
                 if(exnsfw) searchTags += " rating:explicit";
             }
             
