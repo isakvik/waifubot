@@ -6,11 +6,13 @@ public class ConfigDefaults {
 
     public static final int max_image_file_size = (4 * 1024 * 1024);
     public static final String configs_file_path = "";
+    public static final String best_girl_data_filename = "bestgirls.txt";
+    public static final String exclude_data_filename = "excludes.txt";
 
     public static final String client_id = "";
     public static final String client_secret = "";
 
     public static final String bot_name = "waifubot";
-    public static final String bot_ident = "#4906";
+    public static final String bot_ident = "";
     public static final String bot_token = "";
 }
