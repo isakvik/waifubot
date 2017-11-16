@@ -22,12 +22,15 @@ public class ConnectionHandler {
     // returns hashmap containing postcount for results on each imageboard
     public Map<String, Integer> getPostCounts(String searchTags) {
         Map<String, Integer> postCounts = new HashMap<>();
+        String content = "";
 
         for(Map.Entry<String, String> entry : URLs.imageboardApis.entrySet()){
             try {
-                String content = getPageContent(constructApiUrl(entry.getKey(), 0, 0, searchTags)); // limit=0 gives us no post results
-                if(content == null)
+                content = getPageContent(constructApiUrl(entry.getKey(), 0, 0, searchTags));
+                if(content == null){
                     content = "";
+                    continue;
+                }
                 InputStream is = new ByteArrayInputStream(content.getBytes());
 
                 DocumentBuilder dBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
@@ -38,6 +41,7 @@ public class ConnectionHandler {
                 postCounts.put(entry.getKey(), postCount);
 
             } catch (SAXException | IOException | ParserConfigurationException e) {
+                System.err.println("[getPostCounts] content: " + content);
                 e.printStackTrace();
             }
         }
@@ -66,10 +70,10 @@ public class ConnectionHandler {
     // creates URL based on parameters
     public URL constructApiUrl(String imageboard, int limit, int page, String searchTags) throws MalformedURLException {
         try {
-            if(imageboard.equals("konachan")){
+            if(imageboard.equals("konachan") || imageboard.equals("yandere")){
                 if(limit == 0)
-                    limit++; // limit of 0 doesn't work
-                page++; // konachan's pages are indexed at 1
+                    limit++; // limit of 0 gives default amount of results
+                page++; // konachan/yande.re's pages are indexed at 1
             }
             return new URL(URLs.imageboardApis.get(imageboard) + "limit=" + limit + "&pid=" + page + "&tags=" +
                     URLEncoder.encode(searchTags, "UTF-8"));
