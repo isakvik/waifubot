@@ -105,6 +105,10 @@ public class ConnectionHandler {
             byte[] file = getImageFromUrl(new URL(fileUrl));
             if(file == null){ // if file is too big, get image from sample url instead
                 fileUrl = post.getAttributes().getNamedItem("sample_url").getNodeValue();
+                // redo check
+                if(!fileUrl.startsWith("http"))
+                    fileUrl = "http:" + fileUrl;
+
                 file = getImageFromUrl(new URL(fileUrl));
             }
 
