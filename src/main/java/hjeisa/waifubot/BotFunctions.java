@@ -36,36 +36,40 @@ public class BotFunctions {
 
     static void post(User user, String content, MessageChannel chan) {
         // create posting cycle
-        boolean nsfw = content.toLowerCase().startsWith("!postnsfw");
-        boolean exnsfw = content.toLowerCase().startsWith("!postexnsfw");  // exclusively*
+        if(content.toLowerCase().startsWith("!post")) {
+            String[] arguments = content.split(" ");
 
-        if(nsfw || exnsfw){
-            if(chan instanceof TextChannel && !((TextChannel) chan).isNSFW()){
-                chan.sendMessage("This is not set as an NSFW channel.").queue();
-                return;
-            }
-        }
-
-        if(content.toLowerCase().startsWith("!post") || nsfw || exnsfw) {
-            if(content.split(" ").length >= 3){
+            if(arguments.length >= 3){
+                String nsfwTag = getNSFWTag(chan, arguments[1]);
                 int durationIndex = content.indexOf(' ');
+
+                if(nsfwTag == null) nsfwTag = " rating:safe";
+                else durationIndex += 3;
+
                 int searchTagIndex = content.indexOf(' ',durationIndex + 1);
+                if(searchTagIndex == -1){
+                    // duplicate error...
+                    chan.sendMessage("Invalid arguments. Correct form is: "+
+                            "`!post (-flag) <interval> <search tags>`").queue();
+                    return;
+                }
+
                 String intervalString = content.substring(durationIndex + 1, searchTagIndex);
-                String searchTags = content.substring(searchTagIndex + 1);
-                if(nsfw) searchTags +=        " -rating:safe";
-                else if(exnsfw) searchTags += " rating:explicit";
-                else searchTags +=            " rating:safe";
+                String searchTags = content.substring(searchTagIndex + 1) + nsfwTag;
 
                 try {
                     // Duration.parse requires "pt" prefix
                     long intervalSeconds = Duration.parse("pt" + intervalString).getSeconds();
-                    if(intervalSeconds < 0)
-                        throw new Exception("Time can't be negative.");
+                    if(intervalSeconds < 0){
+                        chan.sendMessage("Time can't be negative.").queue();
+                        return;
+                    }
 
                     if(!Config.debug){
                         if (intervalSeconds < Config.min_posting_interval) {
-                            throw new DateTimeParseException("Time is too short. Minimum interval is " +
-                                    Util.parseDuration(Config.min_posting_interval) + "", intervalString, 0);
+                            chan.sendMessage("Time is too short. Minimum interval is " +
+                                    Util.parseDuration(Config.min_posting_interval) + ".").queue();
+                            return;
                         }
                     }
 
@@ -85,39 +89,31 @@ public class BotFunctions {
                 catch (DateTimeParseException dtpe){
                     chan.sendMessage("Could not find duration. Proper usage is `!post <interval> <search tags>`").queue();
                 }
-                catch (Exception e) {
-                    chan.sendMessage(e.getMessage() + ".").queue();
-                }
             }
             else {
-                chan.sendMessage("Invalid arguments. Correct form is:\n"+
-                        "`!post <interval> <search tags>`").queue();
+                chan.sendMessage("Invalid arguments. Correct form is: "+
+                        "`!post (-flag) <interval> <search tags>`").queue();
             }
         }
     }
 
     static void picture(User user, String content, MessageChannel chan) {
-        // create posting cycle
-        boolean nsfw = content.toLowerCase().startsWith("!picturensfw");
-        boolean exnsfw = content.toLowerCase().startsWith("!pictureexnsfw");
-
-        if(nsfw || exnsfw){
-            if(chan instanceof TextChannel && !((TextChannel) chan).isNSFW()){
-                chan.sendMessage("This is not set as an NSFW channel.").queue();
-                return;
-            }
-        }
-
         // post one picture with tags
-        if(content.toLowerCase().startsWith("!picture") || nsfw || exnsfw) {
-            int searchTagIndex = content.indexOf(' ');
+        String[] arguments = content.toLowerCase().split(" ");
+
+        if(arguments[0].equals("!picture")) {
+            String nsfwTag = null;
+            int searchTagIndex = "!picture".length();
             String searchTags = "";
-            if(searchTagIndex != -1){
-                searchTags = content.substring(searchTagIndex + 1);
-                if(nsfw) searchTags +=        " -rating:safe";
-                else if(exnsfw) searchTags += " rating:explicit";
-                else searchTags +=            " rating:safe";
+
+            if(arguments.length >= 2){
+                nsfwTag = getNSFWTag(chan, arguments[1]);
             }
+            if(nsfwTag == null) nsfwTag = " rating:safe";
+            else searchTagIndex += 3;
+
+            searchTags = content.substring(searchTagIndex).trim();
+            searchTags += nsfwTag;
             
             Request request = new Request(chan, 0,
                     searchTags + " " + excludeMap.getOrDefault(user.getIdLong(), ""));
@@ -269,6 +265,19 @@ public class BotFunctions {
     }
 
     ///////////////////////////////////////////////////////// helpers
+
+    private static String getNSFWTag(MessageChannel chan, String argument){
+        if(chan instanceof TextChannel && ((TextChannel) chan).isNSFW()) {
+            if(argument.equals("-n")){
+                return " -rating:safe";
+            }
+            else if(argument.equals("-x")){
+                return " rating:explicit";
+            }
+
+        }
+        return null;
+    }
 
     private static boolean saveMap(Map<Long,String> map, String fileName){
         File mapFile = new File(Config.data_file_path + fileName);
