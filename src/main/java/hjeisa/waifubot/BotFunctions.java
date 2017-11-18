@@ -43,8 +43,13 @@ public class BotFunctions {
                 String nsfwTag = getNSFWTag(chan, arguments[1]);
                 int durationIndex = content.indexOf(' ');
 
-                if(nsfwTag == null) nsfwTag = " rating:safe";
-                else durationIndex += 3;
+                if(nsfwTag == null){
+                    chan.sendMessage("Channel is not set as a NSFW channel.").queue();
+                    return;
+                }
+                else if(!nsfwTag.equals(" rating:safe")){
+                    durationIndex += 3;
+                }
 
                 int searchTagIndex = content.indexOf(' ',durationIndex + 1);
                 if(searchTagIndex == -1){
@@ -98,7 +103,7 @@ public class BotFunctions {
     }
 
     static void picture(User user, String content, MessageChannel chan) {
-        // post one picture with tags
+        // post one picture with (optional) tags
         String[] arguments = content.toLowerCase().split(" ");
 
         if(arguments[0].equals("!picture")) {
@@ -267,16 +272,19 @@ public class BotFunctions {
     ///////////////////////////////////////////////////////// helpers
 
     private static String getNSFWTag(MessageChannel chan, String argument){
-        if(chan instanceof TextChannel && ((TextChannel) chan).isNSFW()) {
-            if(argument.equals("-n")){
+        // TODO: reconsider flow
+        if(argument.equals("-n")){
+            if(chan instanceof TextChannel && ((TextChannel) chan).isNSFW())
                 return " -rating:safe";
-            }
-            else if(argument.equals("-x")){
+            else return null;
+        }
+        else if(argument.equals("-x")){
+            if(chan instanceof TextChannel && ((TextChannel) chan).isNSFW()) {
                 return " rating:explicit";
             }
-
+            else return null;
         }
-        return null;
+        return " rating:safe";
     }
 
     private static boolean saveMap(Map<Long,String> map, String fileName){

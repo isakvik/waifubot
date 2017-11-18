@@ -34,6 +34,8 @@ public class BotMessageListener extends ListenerAdapter {
                     + content);
         }
 
+        // remove unneeded whitespace in commands
+        content = content.replaceAll("\\s+", " ");
         BotFunctions.ping(content, chan);
         BotFunctions.post(user, content, chan);
         BotFunctions.picture(user, content, chan);
