@@ -40,14 +40,20 @@ public class BotFunctions {
             String[] arguments = content.split(" ");
 
             if(arguments.length >= 3){
-                String nsfwTag = getNSFWTag(chan, arguments[1]);
                 int durationIndex = content.indexOf(' ');
 
-                if(nsfwTag == null){
+                String nsfwTag;
+                try {
+                    nsfwTag = getNSFWTag(chan, arguments[1]);
+                } catch (Exception e) {
                     chan.sendMessage("Channel is not set as a NSFW channel.").queue();
                     return;
                 }
-                else if(!nsfwTag.equals(" rating:safe")){
+
+                if(nsfwTag == null){
+                    nsfwTag = " rating:safe";
+                }
+                else {
                     durationIndex += 3;
                 }
 
@@ -107,12 +113,17 @@ public class BotFunctions {
         String[] arguments = content.toLowerCase().split(" ");
 
         if(arguments[0].equals("!picture")) {
-            String nsfwTag = null;
             int searchTagIndex = "!picture".length();
             String searchTags = "";
 
+            String nsfwTag = null;
             if(arguments.length >= 2){
-                nsfwTag = getNSFWTag(chan, arguments[1]);
+                try {
+                    nsfwTag = getNSFWTag(chan, arguments[1]);
+                } catch (Exception e) {
+                    chan.sendMessage("Channel is not set as a NSFW channel.").queue();
+                    return;
+                }
             }
             if(nsfwTag == null) nsfwTag = " rating:safe";
             else searchTagIndex += 3;
@@ -271,20 +282,19 @@ public class BotFunctions {
 
     ///////////////////////////////////////////////////////// helpers
 
-    private static String getNSFWTag(MessageChannel chan, String argument){
+    private static String getNSFWTag(MessageChannel chan, String argument) throws Exception {
         // TODO: reconsider flow
         if(argument.equals("-n")){
             if(chan instanceof TextChannel && ((TextChannel) chan).isNSFW())
                 return " -rating:safe";
-            else return null;
+            else throw new Exception();
         }
         else if(argument.equals("-x")){
-            if(chan instanceof TextChannel && ((TextChannel) chan).isNSFW()) {
+            if(chan instanceof TextChannel && ((TextChannel) chan).isNSFW())
                 return " rating:explicit";
-            }
-            else return null;
+            else throw new Exception();
         }
-        return " rating:safe";
+        return null;
     }
 
     private static boolean saveMap(Map<Long,String> map, String fileName){
