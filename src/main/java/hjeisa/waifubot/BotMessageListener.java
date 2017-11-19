@@ -27,15 +27,18 @@ public class BotMessageListener extends ListenerAdapter {
         // no bots please
         if(user.isBot()) return;
 
+        // remove unneeded whitespace in commands
+        content = content.replaceAll("\\s+", " ");
+        // replace anti-markdown backslashes
+        content = content.replaceAll("\\\\\\_", "_");
+        content = content.replaceAll("\\\\\\*", "*");
+
         if(Config.debug){
-            System.out.println("Received private message: "
+            System.out.println("Received message: "
                     + chan.getName() + ": <"
                     + user.getName() + "> "
                     + content);
         }
-
-        // remove unneeded whitespace in commands
-        content = content.replaceAll("\\s+", " ");
         BotFunctions.ping(content, chan);
         BotFunctions.post(user, content, chan);
         BotFunctions.picture(user, content, chan);
