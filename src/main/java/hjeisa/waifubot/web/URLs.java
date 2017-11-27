@@ -19,6 +19,9 @@ public class URLs {
         return map;
     }
 
+    /*
+     * posted as message after picture is sent, never accessed
+     */
     public static Map<String, String> imageboardPostUrls = createPostUrlMap();
     private static Map<String, String> createPostUrlMap(){
         Map<String, String> map = new HashMap<>();

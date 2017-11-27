@@ -23,10 +23,12 @@ public class ConnectionHandler {
     public Map<String, Integer> getPostCounts(String searchTags) {
         Map<String, Integer> postCounts = new HashMap<>();
         String content = "";
+        URL url = null;
 
         for(Map.Entry<String, String> entry : URLs.imageboardApis.entrySet()){
             try {
-                content = getPageContent(constructApiUrl(entry.getKey(), 0, 0, searchTags));
+                url = constructApiUrl(entry.getKey(), 0, 0, searchTags);
+                content = getPageContent(url);
                 if(content == null){
                     content = "";
                     continue;
@@ -40,9 +42,13 @@ public class ConnectionHandler {
                 Integer postCount = Integer.parseInt(posts.getAttribute("count"));
                 postCounts.put(entry.getKey(), postCount);
 
-            } catch (SAXException | IOException | ParserConfigurationException e) {
+            } catch (Exception e) {
+                if(url != null){
+                    System.err.println("[getPostCounts] URL: " + url.toString());
+                }
                 System.err.println("[getPostCounts] content: " + content);
                 e.printStackTrace();
+                postCounts.put(entry.getKey(), 0);
             }
         }
         return postCounts;
