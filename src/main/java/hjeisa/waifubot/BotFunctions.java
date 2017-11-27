@@ -265,6 +265,7 @@ public class BotFunctions {
 
     static void excludes(User user, String content, MessageChannel chan) {
         // list current user's excludes, or clear excludes
+        // TODO: add ability to remove certain tags only using !excludes clear <tag>
         if(content.toLowerCase().equals("!excludes")){
             String excludes = excludeMap.get(user.getIdLong());
             if(excludes == null){
@@ -280,10 +281,28 @@ public class BotFunctions {
         }
     }
 
+    static void help(String content, MessageChannel chan){
+        String[] aliases = {"!help", "!commands", "!waifubot"};
+
+        for(String alias : aliases){
+            if(content.toLowerCase().equals(alias)){
+                chan.sendMessage("Supported commands:\n" +
+                        "!ping - \"Pong!\"\n" +
+                        "!post (flag) <interval> <tags> - posts picture matching tags each interval (down to 1 minute)\n" +
+                        "!picture (flag) (tags) - posts once picture matching tags\n" +
+                        "!cancel <tags> - cancels request in channel matching tags\n" +
+                        "!cancel - cancels all requests in channel\n" +
+                        "!list - lists all posting cycles in channel currently running\n" +
+                        "!bestgirl (set <tags>) - posts a picture of the user's favorite character (1girl tag is included in searches, so no boys)\n" +
+                        "\n" +
+                        "-n and -x flags can be used for NSFW and exclusively NSFW results respectively.").queue();
+            }
+        }
+    }
+
     ///////////////////////////////////////////////////////// helpers
 
     private static String getNSFWTag(MessageChannel chan, String argument) throws Exception {
-        // TODO: reconsider flow
         if(argument.equals("-n")){
             if(chan instanceof TextChannel && ((TextChannel) chan).isNSFW())
                 return " -rating:safe";
