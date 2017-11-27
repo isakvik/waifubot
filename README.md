@@ -12,3 +12,5 @@ List of commands:
 * !bestgirl (set \<tags\>) - posts a picture of the user's favorite character (1girl tag is included in searches, so no boys).
   
 Currently gets its pictures from Konachan, Safebooru, Gelbooru and yande.re. 
+
+Linux installation/update script can be found [here](https://gist.github.com/isakvik/94c277239430dba43f9844118f48a981).
