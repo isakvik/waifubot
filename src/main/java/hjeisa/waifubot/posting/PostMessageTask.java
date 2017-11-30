@@ -68,13 +68,22 @@ public class PostMessageTask implements Runnable {
             entryList.addAll(postCounts.entrySet());
             entryList.sort((o1, o2) -> o1.getValue() > o2.getValue() ? 1 : Objects.equals(o1.getValue(), o2.getValue()) ? 0 : -1);
 
-            int pagesSkipped = 0;
-            int page = random;
+            // decide which imageboard to get from
             String selectedImageboard = "";
-            for (int i = 0; i < postCounts.size() - 1; i++) {
+            int pagesSkipped = 0;
+
+            //random = rng.nextInt(40);
+            System.out.println("Random: " + random);
+            int page = random;
+
+            for (int i = 0; i <= postCounts.size() - 1; i++) {
                 if (random >= entryList.get(i).getValue() + pagesSkipped) {
                     page -= entryList.get(i).getValue();
                     selectedImageboard = entryList.get(i + 1).getKey();
+                }
+                else {
+                    selectedImageboard = entryList.get(i).getKey();
+                    break;
                 }
                 pagesSkipped += entryList.get(i).getValue();
             }
@@ -91,6 +100,18 @@ public class PostMessageTask implements Runnable {
             if (content == null || content.isEmpty()) {
                 chan.sendMessage("Could not get response from " + selectedImageboard + "'s API.").queue();
                 return;
+            }
+
+            // logs stuff
+            if(Config.debug){
+                System.out.println("Postcounts: ");
+                for(Map.Entry<String, Integer> ent : entryList){
+                    System.out.println(" - " + ent.getKey() + " / " + ent.getValue());
+                }
+                System.out.println("Number generated: " + random);
+                System.out.println("Pages skipped: " + pagesSkipped);
+                System.out.println("Selected imageboard: " + selectedImageboard);
+                System.out.println("Generated URL: " + url);
             }
 
             ImageResponse response = null;

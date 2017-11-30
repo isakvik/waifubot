@@ -47,8 +47,9 @@ public class ConnectionHandler {
                     System.err.println("[getPostCounts] URL: " + url.toString());
                 }
                 System.err.println("[getPostCounts] content: " + content);
-                e.printStackTrace();
-                postCounts.put(entry.getKey(), 0);
+                System.err.println("[getPostCounts] error message: " +
+                        e.getClass().getSimpleName() + ": " + e.getMessage());
+                // postCounts.put(entry.getKey(), 0); // seems unnecessary...
             }
         }
         return postCounts;
@@ -76,13 +77,15 @@ public class ConnectionHandler {
     // creates URL based on parameters
     public URL constructApiUrl(String imageboard, int limit, int page, String searchTags) throws MalformedURLException {
         try {
+            String pageKeyword = "pid";
             if(imageboard.equals("konachan") || imageboard.equals("yandere")){
                 if(limit == 0)
-                    limit++; // limit of 0 gives default amount of results
-                page++; // konachan/yande.re's pages are indexed at 1
+                    limit = 1;          // limit of 0 gives default amount of results (50 or so)
+                page++;                 // pages are indexed at 1
+                pageKeyword = "page";   // key for page ID/offset is page
             }
-            return new URL(URLs.imageboardApis.get(imageboard) + "limit=" + limit + "&pid=" + page + "&tags=" +
-                    URLEncoder.encode(searchTags, "UTF-8"));
+            return new URL(URLs.imageboardApis.get(imageboard) + "limit="+limit + "&" + pageKeyword+"="+page +
+                    "&tags="+URLEncoder.encode(searchTags, "UTF-8"));
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
