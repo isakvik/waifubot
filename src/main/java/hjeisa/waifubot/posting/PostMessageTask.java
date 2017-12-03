@@ -18,6 +18,7 @@ import java.util.Random;
 public class PostMessageTask implements Runnable {
 
     private Request request;
+    private int requestPage;
 
     /*
         procedure:
@@ -97,9 +98,8 @@ public class PostMessageTask implements Runnable {
 
     private ImageResponse getApiResponse(Map<ApiObject, Integer> postCounts, int random){
 
-        Pair<ApiObject, Integer> pair = decideApi(postCounts, random);
-        ApiObject api = pair.getKey();
-        int page = pair.getValue();
+        ApiObject api = decideApi(postCounts, random);
+        int page = requestPage;
         URL postUrl = ApiConnector.constructApiUrl(api, 1, page, request.getSearchTags());
 
         String content = ApiConnector.getPageContent(postUrl);
@@ -124,7 +124,7 @@ public class PostMessageTask implements Runnable {
      * decides which API to use from given postcounts and index.
      * returns a pair of the chosen API and the resulting offset of the given index
      */
-    private Pair<ApiObject, Integer> decideApi(Map<ApiObject, Integer> postCounts, int random){
+    private ApiObject decideApi(Map<ApiObject, Integer> postCounts, int random){
         // create iterable list from postcounts map
         ArrayList<Map.Entry<ApiObject, Integer>> entryList = new ArrayList<>();
         entryList.addAll(postCounts.entrySet());
@@ -136,6 +136,7 @@ public class PostMessageTask implements Runnable {
 
         for (int i = 0; i <= postCounts.size() - 1; i++) {
             if (random >= entryList.get(i).getValue() + pagesSkipped) {
+                System.out.println(random + " \\ " + entryList.get(i).getValue() + pagesSkipped);
                 page -= entryList.get(i).getValue();
                 chosenApi = entryList.get(i + 1).getKey();
             }
@@ -146,6 +147,8 @@ public class PostMessageTask implements Runnable {
             pagesSkipped += entryList.get(i).getValue();
         }
 
-        return new Pair<ApiObject, Integer>(chosenApi, page);
+        // TODO: fix this dumb shit
+        requestPage = page;
+        return chosenApi;
     }
 }
