@@ -1,4 +1,4 @@
-package hjeisa.waifubot.web;
+package hjeisa.waifubot.api;
 
 import hjeisa.waifubot.Config;
 import hjeisa.waifubot.model.ApiObject;
@@ -9,24 +9,21 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import java.awt.*;
 import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLEncoder;
+import java.net.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
-public class ConnectionHandler {
+public class ApiConnector {
 
     // returns hashmap containing postcount for results on each imageboard
-    public Map<ApiObject, Integer> getPostCounts(String searchTags, int searchTagSize) {
+    public static Map<ApiObject, Integer> getPostCounts(String searchTags, int searchTagSize) {
         Map<ApiObject, Integer> postCounts = new HashMap<>();
         String content = "";
         URL url = null;
 
-        for(ApiObject api : URLs.imageboards){
+        for(ApiObject api : Imageboards.imageboards){
             try {
                 if(searchTagSize > api.getTagLimit()){
                     postCounts.put(api, 0);
@@ -35,6 +32,7 @@ public class ConnectionHandler {
                     continue;
                 }
                 if(api.getTagUrl() != null){
+                    // danbooru handling. done here because tag URL is only used for post count retrieval
                     url = new URL(api.getTagUrl());
                 }
                 else {
@@ -65,7 +63,14 @@ public class ConnectionHandler {
 
                 postCounts.put(api, postCount);
 
-            } catch (Exception e) {
+            }
+            catch (SAXException saxe){
+                if(url != null){
+                    System.err.println("[getPostCounts] URL: " + url.toString());
+                }
+            }
+            catch (Exception e) {
+                System.err.println("[getPostCounts] General exception occurred.");
                 if(url != null){
                     System.err.println("[getPostCounts] URL: " + url.toString());
                 }
@@ -79,10 +84,11 @@ public class ConnectionHandler {
     }
 
     // get string containing page source
-    public String getPageContent(URL url) {
-        String content = "";
-        Scanner in = null;
+    public static String getPageContent(URL url) {
+        String content;
+        Scanner in;
         try {
+            // TODO: gelbooru has a redirect from http to https while the API is down, leads to xml parsing exception
             in = new Scanner(url.openStream(), "UTF-8").useDelimiter("//A");
             content = (in.hasNext() ? in.next() : "");
         } catch (Exception e) {
@@ -98,7 +104,7 @@ public class ConnectionHandler {
     }
 
     // creates URL based on parameters
-    public URL constructApiUrl(ApiObject api, int limit, int page, String searchTags) throws MalformedURLException {
+    public static URL constructApiUrl(ApiObject api, int limit, int page, String searchTags) {
         try {
             String pageKeyword = "pid";
             if(api.getName().equals("danbooru") ||
@@ -111,7 +117,8 @@ public class ConnectionHandler {
             }
             return new URL(api.getApiUrl() + "limit="+limit + "&" + pageKeyword+"="+page +
                     "&tags="+URLEncoder.encode(searchTags, "UTF-8"));
-        } catch (UnsupportedEncodingException e) {
+        }
+        catch (UnsupportedEncodingException | MalformedURLException e) {
             e.printStackTrace();
         }
 
@@ -119,7 +126,7 @@ public class ConnectionHandler {
     }
 
     // returns object holding all info needed to post an image
-    public ImageResponse parseResponse(ApiObject api, String content) throws IOException {
+    public static ImageResponse parseResponse(ApiObject api, String content) {
         ImageResponse response = null;
 
         try {
@@ -154,14 +161,14 @@ public class ConnectionHandler {
             response = new ImageResponse(file, fileName, postUrl, sourceUrl);
 
         }
-        catch (SAXException | ParserConfigurationException e) {
+        catch (SAXException | ParserConfigurationException | IOException e) {
             e.printStackTrace();
         }
 
         return response;
     }
 
-    public byte[] getImageFromUrl(URL url) throws IOException {
+    public static byte[] getImageFromUrl(URL url) throws IOException {
         byte[] temp = new byte[Config.max_image_file_size]; // 4MiB, limited by Discord
 
         InputStream in = url.openStream();
