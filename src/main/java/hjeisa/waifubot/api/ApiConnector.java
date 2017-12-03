@@ -1,6 +1,7 @@
 package hjeisa.waifubot.web;
 
 import hjeisa.waifubot.Config;
+import hjeisa.waifubot.model.ApiObject;
 import hjeisa.waifubot.model.ImageResponse;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
@@ -20,14 +21,26 @@ import java.util.Scanner;
 public class ConnectionHandler {
 
     // returns hashmap containing postcount for results on each imageboard
-    public Map<String, Integer> getPostCounts(String searchTags) {
-        Map<String, Integer> postCounts = new HashMap<>();
+    public Map<ApiObject, Integer> getPostCounts(String searchTags, int searchTagSize) {
+        Map<ApiObject, Integer> postCounts = new HashMap<>();
         String content = "";
         URL url = null;
 
-        for(Map.Entry<String, String> entry : URLs.imageboardApis.entrySet()){
+        for(ApiObject api : URLs.imageboards){
             try {
-                url = constructApiUrl(entry.getKey(), 0, 0, searchTags);
+                if(searchTagSize > api.getTagLimit()){
+                    postCounts.put(api, 0);
+                    if(Config.debug)
+                        System.out.println("Skipped api " + api.getName() + " because of tag limit.");
+                    continue;
+                }
+                if(api.getTagUrl() != null){
+                    url = new URL(api.getTagUrl());
+                }
+                else {
+                    url = constructApiUrl(api, 0, 0, searchTags);
+                }
+
                 content = getPageContent(url);
                 if(content == null){
                     content = "";
@@ -38,9 +51,19 @@ public class ConnectionHandler {
                 DocumentBuilder dBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
                 Document doc = dBuilder.parse(is);
 
-                Element posts = doc.getDocumentElement();
-                Integer postCount = Integer.parseInt(posts.getAttribute("count"));
-                postCounts.put(entry.getKey(), postCount);
+                Element rootTag = doc.getDocumentElement();
+                Integer postCount;
+
+                if(rootTag.getTagName().equals("tags")){
+                    // danbooru handling
+                    Node postCountElement = rootTag.getElementsByTagName("post-count").item(0);
+                    postCount = Integer.parseInt(postCountElement.getTextContent());
+                }
+                else {
+                    postCount = Integer.parseInt(rootTag.getAttribute("count"));
+                }
+
+                postCounts.put(api, postCount);
 
             } catch (Exception e) {
                 if(url != null){
@@ -49,7 +72,7 @@ public class ConnectionHandler {
                 System.err.println("[getPostCounts] content: " + content);
                 System.err.println("[getPostCounts] error message: " +
                         e.getClass().getSimpleName() + ": " + e.getMessage());
-                // postCounts.put(entry.getKey(), 0); // seems unnecessary...
+                // postCounts.put(api, 0); // seems unnecessary...
             }
         }
         return postCounts;
@@ -69,22 +92,24 @@ public class ConnectionHandler {
         }
         in.close();
         /*  scrubs unnecessary whitespace from api results
-            this is necessary because konachan has whitespace in their api results,
+            this is necessary because konachan/danbooru have whitespace in their api results,
             and that breaks the XML parsing as it considers <posts> a text content tag */
         return content.replaceAll(">\\s+?<","><");
     }
 
     // creates URL based on parameters
-    public URL constructApiUrl(String imageboard, int limit, int page, String searchTags) throws MalformedURLException {
+    public URL constructApiUrl(ApiObject api, int limit, int page, String searchTags) throws MalformedURLException {
         try {
             String pageKeyword = "pid";
-            if(imageboard.equals("konachan") || imageboard.equals("yandere")){
+            if(api.getName().equals("danbooru") ||
+               api.getName().equals("konachan") ||
+               api.getName().equals("yandere")){
                 if(limit == 0)
-                    limit = 1;          // limit of 0 gives default amount of results (50 or so)
+                    limit = 1;          // limit of 0 gives default amount of results (20)
                 page++;                 // pages are indexed at 1
                 pageKeyword = "page";   // key for page ID/offset is page
             }
-            return new URL(URLs.imageboardApis.get(imageboard) + "limit="+limit + "&" + pageKeyword+"="+page +
+            return new URL(api.getApiUrl() + "limit="+limit + "&" + pageKeyword+"="+page +
                     "&tags="+URLEncoder.encode(searchTags, "UTF-8"));
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
@@ -94,7 +119,7 @@ public class ConnectionHandler {
     }
 
     // returns object holding all info needed to post an image
-    public ImageResponse parseResponse(String imageboard, String content) throws IOException {
+    public ImageResponse parseResponse(ApiObject api, String content) throws IOException {
         ImageResponse response = null;
 
         try {
@@ -115,8 +140,6 @@ public class ConnectionHandler {
             if(file == null){ // if file is too big, get image from sample url instead
                 fileUrl = post.getAttributes().getNamedItem("sample_url").getNodeValue();
                 // redo check
-                if(!fileUrl.startsWith("http"))
-                    fileUrl = "http:" + fileUrl;
 
                 file = getImageFromUrl(new URL(fileUrl));
             }
@@ -124,7 +147,7 @@ public class ConnectionHandler {
             String fileName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
 
             String postID = post.getAttributes().getNamedItem("id").getNodeValue();
-            String postUrl = URLs.imageboardPostUrls.get(imageboard) + postID;
+            String postUrl = api.getPostUrl() + postID;
 
             String sourceUrl = post.getAttributes().getNamedItem("source").getNodeValue();
 

@@ -1,7 +1,7 @@
 package hjeisa.waifubot.model;
 
 public class ImageResponse {
-    // value object for holding URLs
+    // value object for holding images
 
     private byte[] imageData;
     private String fileName;
