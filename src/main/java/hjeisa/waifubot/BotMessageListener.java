@@ -33,14 +33,12 @@ public class BotMessageListener extends ListenerAdapter {
         content = content.replaceAll("\\\\\\_", "_");
         content = content.replaceAll("\\\\\\*", "*");
 
-        /*
-        if(Config.debug){
+        /* if(Config.debug){
             System.out.println("Received message: "
                     + chan.getName() + ": <"
                     + user.getName() + "> "
                     + content);
-        }
-        */
+        } */
         BotFunctions.ping(content, chan);
         BotFunctions.post(user, content, chan);
         BotFunctions.picture(user, content, chan);

@@ -13,6 +13,8 @@ import java.util.*;
 
 public class BotFunctions {
 
+    // TODO: add danbooru support, add tag limit check/support, add random/all sfws flag og ignore excludes flag
+
     // schedules post cycles
     private static PostController postController = new PostController();
     // holds all requests not cancelled
@@ -50,12 +52,8 @@ public class BotFunctions {
                     return;
                 }
 
-                if(nsfwTag == null){
-                    nsfwTag = " rating:safe";
-                }
-                else {
-                    durationIndex += 3;
-                }
+                if(nsfwTag == null) nsfwTag = " rating:safe";
+                else                durationIndex += arguments[1].length();
 
                 int searchTagIndex = content.indexOf(' ',durationIndex + 1);
                 if(searchTagIndex == -1){
@@ -66,7 +64,8 @@ public class BotFunctions {
                 }
 
                 String intervalString = content.substring(durationIndex + 1, searchTagIndex);
-                String searchTags = content.substring(searchTagIndex + 1) + nsfwTag;
+                String searchTags = (content.substring(searchTagIndex + 1) + nsfwTag + " " +
+                                    excludeMap.getOrDefault(user.getIdLong(), "")).trim();
 
                 try {
                     // Duration.parse requires "pt" prefix
@@ -85,8 +84,7 @@ public class BotFunctions {
                     }
 
                     if(Util.findRequestBySearchText(requestList, chan, searchTags) == null){
-                        Request request = new Request(chan, intervalSeconds,
-                                searchTags + " " + excludeMap.getOrDefault(user.getIdLong(), ""));
+                        Request request = new Request(chan, intervalSeconds, searchTags);
                         requestList.add(request);
                         postController.schedulePostCycle(request);
 
