@@ -10,6 +10,7 @@ public class Request {
 
     private long timeInterval;
     private String searchTags;
+    private int searchTagSize;
 
     public HashSet<Integer> alreadyPosted;
 
@@ -17,6 +18,7 @@ public class Request {
         this.channel = channel;
         this.timeInterval = timeInterval;
         this.searchTags = searchTags;
+        this.searchTagSize = searchTags.split(" ").length;
 
         alreadyPosted = new HashSet<>();
     }
@@ -31,6 +33,9 @@ public class Request {
 
     public String getSearchTags() {
         return searchTags;
+    }
+    public int getSearchTagSize() {
+        return searchTagSize;
     }
 
     public String getSearchTagsWithoutExcludes() {
