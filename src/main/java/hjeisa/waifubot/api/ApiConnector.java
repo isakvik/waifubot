@@ -15,6 +15,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 
+import static hjeisa.waifubot.api.Imageboards.imageboards;
+
 public class ApiConnector {
 
     // returns hashmap containing postcount for results on each imageboard
@@ -23,7 +25,7 @@ public class ApiConnector {
         String content = "";
         URL url = null;
 
-        for(ApiObject api : Imageboards.imageboards){
+        for(ApiObject api : imageboards){
             try {
                 if(searchTagSize > api.getTagLimit()){
                     postCounts.put(api, 0);
@@ -33,7 +35,10 @@ public class ApiConnector {
                 }
                 if(api.getTagUrl() != null){
                     // danbooru handling. done here because tag URL is only used for post count retrieval
-                    url = new URL(api.getTagUrl());
+                    if(!searchTags.startsWith("rating"))
+                        url = new URL(api.getTagUrl() + searchTags);
+                    else
+                        continue;
                 }
                 else {
                     url = constructApiUrl(api, 0, 0, searchTags);
