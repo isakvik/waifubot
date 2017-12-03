@@ -27,11 +27,10 @@ public class Imageboards {
                 "https://yande.re/post.xml?",
                 "https://yande.re/post/show/",
                 6));
-
         list.add(new ApiObject("danbooru",
                 "https://danbooru.donmai.us/posts.xml?",
                 "https://danbooru.donmai.us/posts/",
-                "https://danbooru.donmai.us/tags.xml?search[name]=",
+                "https://danbooru.donmai.us/tags.xml?search%5Bname%5D=",
                 1));
 
         imageboards = Collections.unmodifiableList(list);

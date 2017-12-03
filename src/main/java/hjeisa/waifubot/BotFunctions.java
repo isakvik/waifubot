@@ -53,7 +53,7 @@ public class BotFunctions {
                 }
 
                 if(nsfwTag == null) nsfwTag = " rating:safe";
-                else                durationIndex += arguments[1].length();
+                else                durationIndex += arguments[1].length() + 1;
 
                 int searchTagIndex = content.indexOf(' ',durationIndex + 1);
                 if(searchTagIndex == -1){
@@ -124,13 +124,13 @@ public class BotFunctions {
                 }
             }
             if(nsfwTag == null) nsfwTag = " rating:safe";
-            else searchTagIndex += 3;
+            else                searchTagIndex += arguments[1].length() + 1;
 
-            searchTags = content.substring(searchTagIndex).trim();
-            searchTags += nsfwTag;
+            searchTags = content.substring(searchTagIndex) + nsfwTag
+                    + " " + excludeMap.getOrDefault(user.getIdLong(), "");
+            searchTags = searchTags.trim();
             
-            Request request = new Request(chan, 0,
-                    searchTags + " " + excludeMap.getOrDefault(user.getIdLong(), ""));
+            Request request = new Request(chan, 0, searchTags);
             postController.schedulePostOnce(request);
         }
     }
