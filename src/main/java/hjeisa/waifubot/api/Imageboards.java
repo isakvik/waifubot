@@ -30,9 +30,9 @@ public class Imageboards {
         list.add(new ApiObject("danbooru",
                 "https://danbooru.donmai.us/posts.xml?",
                 "https://danbooru.donmai.us/posts/",
-                "https://danbooru.donmai.us/tags.xml?search%5Bname%5D=",
+                "http://danbooru.donmai.us/",
+                "http://danbooru.donmai.us/tags.xml?search[name]=",
                 1));
-
-        imageboards = Collections.unmodifiableList(list);
-    }
+         imageboards = Collections.unmodifiableList(list);
 }
+        }
