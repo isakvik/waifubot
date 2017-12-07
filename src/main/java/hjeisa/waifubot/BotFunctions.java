@@ -245,8 +245,8 @@ public class BotFunctions {
                 for(String exclude : excludeList)
                     sb.append(exclude).append(" ");
 
-            // will update list
-                excludeMap.put(user.getIdLong(), sb.toString());
+                // will update list
+                excludeMap.put(user.getIdLong(), sb.toString().trim());
                 if(!saveMap(excludeMap, Config.exclude_data_filename)){
                     chan.sendMessage("Couldn't save your exclude list, probably due to me being in test mode." +
                             " Sorry!").queue();
@@ -301,6 +301,12 @@ public class BotFunctions {
     ///////////////////////////////////////////////////////// helpers
 
     private static String getNSFWTag(MessageChannel chan, String argument) throws Exception {
+        // TODO: redo tag handling so that additive tags can be used
+        if(argument.equals("-r")){
+            if(chan instanceof TextChannel && ((TextChannel) chan).isNSFW())
+                return "";
+            else throw new Exception();
+        }
         if(argument.equals("-n")){
             if(chan instanceof TextChannel && ((TextChannel) chan).isNSFW())
                 return " -rating:safe";

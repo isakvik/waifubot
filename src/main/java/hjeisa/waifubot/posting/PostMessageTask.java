@@ -58,6 +58,8 @@ public class PostMessageTask implements Runnable {
             int random = rng.nextInt(sum);
 
             // prevent already posted images from reappearing for the same request
+            // this does not work for danbooru requests because we let the API handle the random part
+            // but it shouldn't matter for 
             while(request.alreadyPosted.contains(random)){
                 random++;
                 random %= sum;
@@ -80,7 +82,7 @@ public class PostMessageTask implements Runnable {
         // links cased in <> removes thumbnails/embeds
         StringBuilder sourceMessage = new StringBuilder("");
         sourceMessage.append("Post: <")
-                .append(response.getPostURL())
+                .append(response.getPostURL() == null ? "none" : response.getPostURL())
                 .append(">\nSource: ")
                 .append(response.getSourceURL().isEmpty() ? "none" : "<" + response.getSourceURL() + ">");
 
@@ -99,11 +101,18 @@ public class PostMessageTask implements Runnable {
     private ImageResponse getApiResponse(Map<ApiObject, Integer> postCounts, int random){
 
         ApiObject api = decideApi(postCounts, random);
-        int page = requestPage;
-        URL postUrl = ApiConnector.constructApiUrl(api, 1, page, request.getSearchTags());
+        int page;
+        int offset;
+        int limit;
+
+        page = requestPage;
+        limit = 1;
+        offset = 0;
+
+        URL postUrl = ApiConnector.constructApiUrl(api, limit, page, request.getSearchTags());
 
         String content = ApiConnector.getPageContent(postUrl);
-        ImageResponse response = ApiConnector.parseResponse(api, content);
+        ImageResponse response = ApiConnector.parseResponse(api, content, offset);
 
         // logs stuff
         if(Config.debug){
@@ -136,7 +145,6 @@ public class PostMessageTask implements Runnable {
 
         for (int i = 0; i <= postCounts.size() - 1; i++) {
             if (random >= entryList.get(i).getValue() + pagesSkipped) {
-                System.out.println(random + " \\ " + entryList.get(i).getValue() + pagesSkipped);
                 page -= entryList.get(i).getValue();
                 chosenApi = entryList.get(i + 1).getKey();
             }

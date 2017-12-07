@@ -12,6 +12,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
 import java.net.*;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -28,7 +29,6 @@ public class ApiConnector {
         for(ApiObject api : imageboards){
             try {
                 if(searchTagSize > api.getTagLimit()){
-                    postCounts.put(api, 0);
                     if(Config.debug)
                         System.out.println("Skipped api " + api.getName() + " because of tag limit.");
                     continue;
@@ -58,9 +58,10 @@ public class ApiConnector {
                 Integer postCount;
 
                 if(rootTag.getTagName().equals("tags")){
-                    // danbooru handling
+                    // danbooru tag page handling
                     Node postCountElement = rootTag.getElementsByTagName("post-count").item(0);
                     postCount = Integer.parseInt(postCountElement.getTextContent());
+                    // maximum of 100k results...
                 }
                 else {
                     postCount = Integer.parseInt(rootTag.getAttribute("count"));
@@ -82,10 +83,96 @@ public class ApiConnector {
                 System.err.println("[getPostCounts] content: " + content);
                 System.err.println("[getPostCounts] error message: " +
                         e.getClass().getSimpleName() + ": " + e.getMessage());
-                // postCounts.put(api, 0); // seems unnecessary...
             }
         }
         return postCounts;
+    }
+
+    // creates URL based on parameters
+    public static URL constructApiUrl(ApiObject api, int limit, int page, String searchTags) {
+        try {
+            if(api.getName().equals("danbooru")){
+                // just use random image functionality, disregard parameters
+                return new URL(api.getApiUrl() + "random=true" +
+                        "&tags="+URLEncoder.encode(searchTags, "UTF-8"));
+            }
+
+            String pageKeyword = "pid";
+
+            if(api.getName().equals("konachan") ||
+               api.getName().equals("yandere")){
+                if(limit == 0)
+                    limit = 1;          // limit of 0 gives default amount of results (20)
+                page++;                 // pages are indexed at 1
+                pageKeyword = "page";   // key for page ID/offset is page
+            }
+
+            return new URL(api.getApiUrl() + "limit="+limit + "&" + pageKeyword+"="+page +
+                    "&tags="+URLEncoder.encode(searchTags, "UTF-8"));
+        }
+        catch (UnsupportedEncodingException | MalformedURLException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    // returns object holding all info needed to post an image
+    public static ImageResponse parseResponse(ApiObject api, String content, int offset) {
+        ImageResponse response = null;
+
+        try {
+            InputStream is = new ByteArrayInputStream(content.getBytes());
+            DocumentBuilder dBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            Document doc = dBuilder.parse(is);
+
+            Element posts = doc.getDocumentElement();
+            NodeList postNodeList = posts.getChildNodes();
+            Node post = postNodeList.item(offset);
+
+            String fileUrlTag;
+            String sampleUrlTag;
+            if(api.getName().equals("danbooru")){
+                fileUrlTag = "file-url";
+                sampleUrlTag = "large-file-url";
+            }
+            else{
+                fileUrlTag = "file_url";
+                sampleUrlTag = "sample_url";
+            }
+
+            String fileUrl = getContentFromXmlTag(post, fileUrlTag);
+
+            if(api.getImgUrl() != null){
+                fileUrl = api.getImgUrl() + fileUrl.substring(1);
+            }
+
+            // safebooru and konachan do not use protocol in their file links
+            if(!fileUrl.startsWith("http")){
+                fileUrl = "http:" + fileUrl;
+            }
+
+            byte[] file = getImageFromUrl(new URL(fileUrl));
+            if(file == null){ // if file is too big, get image from sample url instead
+                fileUrl = getContentFromXmlTag(post, sampleUrlTag);
+                file = getImageFromUrl(new URL(fileUrl));
+            }
+
+            String fileName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
+
+            String postID = getContentFromXmlTag(post, "id");
+            String postUrl = api.getPostUrl() + postID;
+
+            String sourceUrl = getContentFromXmlTag(post, "source");
+
+            response = new ImageResponse(file, fileName, postUrl, sourceUrl);
+
+        }
+        catch (SAXException | ParserConfigurationException | IOException e) {
+            e.printStackTrace();
+        }
+
+        return response;
     }
 
     // get string containing page source
@@ -94,7 +181,11 @@ public class ApiConnector {
         Scanner in;
         try {
             // TODO: gelbooru has a redirect from http to https while the API is down, leads to xml parsing exception
-            in = new Scanner(url.openStream(), "UTF-8").useDelimiter("//A");
+            URLConnection con = url.openConnection();
+            con.setRequestProperty("User-Agent", Config.bot_user_agent);
+            con.connect();
+
+            in = new Scanner(con.getInputStream(), "UTF-8").useDelimiter("//A");
             content = (in.hasNext() ? in.next() : "");
         } catch (Exception e) {
             System.err.println("[ERROR] getPageContent for url " + url +  " failed.");
@@ -108,75 +199,15 @@ public class ApiConnector {
         return content.replaceAll(">\\s+?<","><");
     }
 
-    // creates URL based on parameters
-    public static URL constructApiUrl(ApiObject api, int limit, int page, String searchTags) {
-        try {
-            String pageKeyword = "pid";
-            if(api.getName().equals("danbooru") ||
-               api.getName().equals("konachan") ||
-               api.getName().equals("yandere")){
-                if(limit == 0)
-                    limit = 1;          // limit of 0 gives default amount of results (20)
-                page++;                 // pages are indexed at 1
-                pageKeyword = "page";   // key for page ID/offset is page
-            }
-            return new URL(api.getApiUrl() + "limit="+limit + "&" + pageKeyword+"="+page +
-                    "&tags="+URLEncoder.encode(searchTags, "UTF-8"));
-        }
-        catch (UnsupportedEncodingException | MalformedURLException e) {
-            e.printStackTrace();
-        }
+    // private helpers below //
 
-        return null;
-    }
-
-    // returns object holding all info needed to post an image
-    public static ImageResponse parseResponse(ApiObject api, String content) {
-        ImageResponse response = null;
-
-        try {
-            InputStream is = new ByteArrayInputStream(content.getBytes());
-            DocumentBuilder dBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-            Document doc = dBuilder.parse(is);
-
-            Element posts = doc.getDocumentElement();
-            Node post = posts.getFirstChild();
-
-            String fileUrl;
-            fileUrl = post.getAttributes().getNamedItem("file_url").getNodeValue();
-            // safebooru and konachan do not use protocol in their file links
-            if(!fileUrl.startsWith("http"))
-                fileUrl = "http:" + fileUrl;
-
-            byte[] file = getImageFromUrl(new URL(fileUrl));
-            if(file == null){ // if file is too big, get image from sample url instead
-                fileUrl = post.getAttributes().getNamedItem("sample_url").getNodeValue();
-                // redo check
-
-                file = getImageFromUrl(new URL(fileUrl));
-            }
-
-            String fileName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
-
-            String postID = post.getAttributes().getNamedItem("id").getNodeValue();
-            String postUrl = api.getPostUrl() + postID;
-
-            String sourceUrl = post.getAttributes().getNamedItem("source").getNodeValue();
-
-            response = new ImageResponse(file, fileName, postUrl, sourceUrl);
-
-        }
-        catch (SAXException | ParserConfigurationException | IOException e) {
-            e.printStackTrace();
-        }
-
-        return response;
-    }
-
-    public static byte[] getImageFromUrl(URL url) throws IOException {
+    private static byte[] getImageFromUrl(URL url) throws IOException {
         byte[] temp = new byte[Config.max_image_file_size]; // 4MiB, limited by Discord
 
-        InputStream in = url.openStream();
+        URLConnection con = url.openConnection();
+        con.setRequestProperty("User-Agent", Config.bot_user_agent);
+        con.connect();
+        InputStream in = con.getInputStream();
         int i;
         int read;
         for(i = 0; (read = in.read()) != -1; i++){
@@ -193,5 +224,23 @@ public class ApiConnector {
         System.arraycopy(temp,0,img,0,i);
         in.close();
         return img;
+    }
+
+    private static String getContentFromXmlTag(Node post, String tagName){
+        if(post.hasAttributes()){
+            return post.getAttributes().getNamedItem(tagName).getNodeValue();
+        }
+        else {
+            // danbooru handling
+            NodeList postChildNodes = post.getChildNodes();
+            for(int i = 0; i < postChildNodes.getLength(); i++){
+                Node node = postChildNodes.item(i);
+                if(node.getNodeName().equals(tagName)){
+                    return node.getTextContent();
+                }
+            }
+        }
+        // should never happen
+        return null;
     }
 }
