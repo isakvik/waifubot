@@ -59,7 +59,7 @@ public class PostMessageTask implements Runnable {
 
             // prevent already posted images from reappearing for the same request
             // this does not work for danbooru requests because we let the API handle the random part
-            // but it shouldn't matter for 
+            // but it shouldn't matter for
             while(request.alreadyPosted.contains(random)){
                 random++;
                 random %= sum;
@@ -80,9 +80,23 @@ public class PostMessageTask implements Runnable {
     private void postResponse(MessageChannel chan, ImageResponse response){
         // TODO: figure out how to use embed for source/post links
         // links cased in <> removes thumbnails/embeds
+
+        if(Config.debug){
+            if(response != null){
+                System.out.println("Response data: ");
+                System.out.println("    filename: " + response.getFileName());
+                System.out.println("    posturl: " + response.getPostURL());
+                System.out.println("    srcurl: " + response.getSourceURL());
+                System.out.println("    img size: " + response.getImageData().length);
+            }
+            else {
+                System.out.println("Response was null.");
+            }
+        }
+
         StringBuilder sourceMessage = new StringBuilder("");
         sourceMessage.append("Post: <")
-                .append(response.getPostURL() == null ? "none" : response.getPostURL())
+                .append(response.getPostURL())
                 .append(">\nSource: ")
                 .append(response.getSourceURL().isEmpty() ? "none" : "<" + response.getSourceURL() + ">");
 

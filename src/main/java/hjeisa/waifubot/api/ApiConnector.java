@@ -142,19 +142,13 @@ public class ApiConnector {
             }
 
             String fileUrl = getContentFromXmlTag(post, fileUrlTag);
-
-            if(api.getImgUrl() != null){
-                fileUrl = api.getImgUrl() + fileUrl.substring(1);
-            }
-
-            // safebooru and konachan do not use protocol in their file links
-            if(!fileUrl.startsWith("http")){
-                fileUrl = "http:" + fileUrl;
-            }
+            fileUrl = constructFileUrl(api, fileUrl);
 
             byte[] file = getImageFromUrl(new URL(fileUrl));
             if(file == null){ // if file is too big, get image from sample url instead
                 fileUrl = getContentFromXmlTag(post, sampleUrlTag);
+                fileUrl = constructFileUrl(api, fileUrl);
+
                 file = getImageFromUrl(new URL(fileUrl));
             }
 
@@ -224,6 +218,17 @@ public class ApiConnector {
         System.arraycopy(temp,0,img,0,i);
         in.close();
         return img;
+    }
+
+    private static String constructFileUrl(ApiObject api, String fileUrl){
+        if(api.getImgUrl() != null){
+            fileUrl = api.getImgUrl() + fileUrl.substring(1);
+        }
+        // safebooru and konachan do not use protocol in their file links
+        if(!fileUrl.startsWith("http")){
+            fileUrl = "http:" + fileUrl;
+        }
+        return fileUrl;
     }
 
     private static String getContentFromXmlTag(Node post, String tagName){
