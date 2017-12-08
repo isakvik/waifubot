@@ -1,6 +1,7 @@
 package hjeisa.waifubot.posting;
 
 import hjeisa.waifubot.Config;
+import hjeisa.waifubot.exception.FileDeletedException;
 import hjeisa.waifubot.model.ApiObject;
 import hjeisa.waifubot.model.ImageResponse;
 import hjeisa.waifubot.model.Request;
@@ -8,6 +9,7 @@ import hjeisa.waifubot.api.ApiConnector;
 import javafx.util.Pair;
 import net.dv8tion.jda.core.entities.MessageChannel;
 
+import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -59,7 +61,7 @@ public class PostMessageTask implements Runnable {
 
             // prevent already posted images from reappearing for the same request
             // this does not work for danbooru requests because we let the API handle the random part
-            // but it shouldn't matter for
+            // but it shouldn't matter unless the tag is very rare
             while(request.alreadyPosted.contains(random)){
                 random++;
                 random %= sum;
@@ -69,10 +71,12 @@ public class PostMessageTask implements Runnable {
             ImageResponse response = getApiResponse(postCounts, random);
             postResponse(chan, response);
         }
+        catch (FileDeletedException fde){
+            chan.sendMessage("Looked up deleted file, retrying for new post...").queue();
+            run();
+        }
         catch (Exception e){
             chan.sendMessage("An unexpected error occurred while processing your request.").queue();
-            System.out.println("Exception caught.");
-            System.out.println("Tags: " + request.getSearchTags());
             e.printStackTrace();
         }
     }
@@ -112,7 +116,7 @@ public class PostMessageTask implements Runnable {
         }
     }
 
-    private ImageResponse getApiResponse(Map<ApiObject, Integer> postCounts, int random){
+    private ImageResponse getApiResponse(Map<ApiObject, Integer> postCounts, int random) throws FileDeletedException {
 
         ApiObject api = decideApi(postCounts, random);
         int page;
@@ -126,7 +130,6 @@ public class PostMessageTask implements Runnable {
         URL postUrl = ApiConnector.constructApiUrl(api, limit, page, request.getSearchTags());
 
         String content = ApiConnector.getPageContent(postUrl);
-        ImageResponse response = ApiConnector.parseResponse(api, content, offset);
 
         // logs stuff
         if(Config.debug){
@@ -135,12 +138,12 @@ public class PostMessageTask implements Runnable {
                 System.out.println(" - " + ent.getKey().getName() + " / " + ent.getValue());
             }
             System.out.println("Number generated: " + random);
-            System.out.println("Selected imageboard: " + api.getName());
             System.out.println("Resulting page: " + page);
             System.out.println("Generated URL: " + postUrl);
+            System.out.println("Selected imageboard: " + api.getName());
         }
 
-        return response;
+        return ApiConnector.parseResponse(api, content, offset);
     }
 
     /*

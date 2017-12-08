@@ -1,6 +1,7 @@
 package hjeisa.waifubot.api;
 
 import hjeisa.waifubot.Config;
+import hjeisa.waifubot.exception.FileDeletedException;
 import hjeisa.waifubot.model.ApiObject;
 import hjeisa.waifubot.model.ImageResponse;
 import org.w3c.dom.*;
@@ -93,7 +94,7 @@ public class ApiConnector {
         try {
             if(api.getName().equals("danbooru")){
                 // just use random image functionality, disregard parameters
-                return new URL(api.getApiUrl() + "random=true" +
+                return new URL(api.getApiUrl() + "random=true&limit=1" +
                         "&tags="+URLEncoder.encode(searchTags, "UTF-8"));
             }
 
@@ -118,7 +119,7 @@ public class ApiConnector {
     }
 
     // returns object holding all info needed to post an image
-    public static ImageResponse parseResponse(ApiObject api, String content, int offset) {
+    public static ImageResponse parseResponse(ApiObject api, String content, int offset) throws FileDeletedException {
         ImageResponse response = null;
 
         try {
@@ -142,6 +143,9 @@ public class ApiConnector {
             }
 
             String fileUrl = getContentFromXmlTag(post, fileUrlTag);
+            if(fileUrl == null)
+                throw new FileDeletedException();
+
             fileUrl = constructFileUrl(api, fileUrl);
 
             byte[] file = getImageFromUrl(new URL(fileUrl));
@@ -153,10 +157,8 @@ public class ApiConnector {
             }
 
             String fileName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
-
             String postID = getContentFromXmlTag(post, "id");
             String postUrl = api.getPostUrl() + postID;
-
             String sourceUrl = getContentFromXmlTag(post, "source");
 
             response = new ImageResponse(file, fileName, postUrl, sourceUrl);
@@ -222,7 +224,7 @@ public class ApiConnector {
 
     private static String constructFileUrl(ApiObject api, String fileUrl){
         if(api.getImgUrl() != null){
-            fileUrl = api.getImgUrl() + fileUrl.substring(1);
+            fileUrl = api.getImgUrl() + fileUrl.substring(1); // removes unnecessary slash
         }
         // safebooru and konachan do not use protocol in their file links
         if(!fileUrl.startsWith("http")){
@@ -245,7 +247,7 @@ public class ApiConnector {
                 }
             }
         }
-        // should never happen
+        // happens in the case that a file is removed on danbooru, where post has no associated file anymore
         return null;
     }
 }
