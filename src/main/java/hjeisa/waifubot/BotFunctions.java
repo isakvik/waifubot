@@ -291,9 +291,9 @@ public class BotFunctions {
                         "!cancel <tags> - cancels request in channel matching tags\n" +
                         "!cancel - cancels all requests in channel\n" +
                         "!list - lists all posting cycles in channel currently running\n" +
-                        "!bestgirl (set <tags>) - posts a picture of the user's favorite character (1girl tag is included in searches, so no boys)\n" +
+                        "!bestgirl (set <tags>) - posts a picture of the user's favorite character (1girl tag is included in searches)\n" +
                         "\n" +
-                        "-n and -x flags can be used for NSFW and exclusively NSFW results respectively.").queue();
+                        "-n, -x, -r flags can be used for NSFW, exclusively NSFW, and all results respectively.").queue();
             }
         }
     }
