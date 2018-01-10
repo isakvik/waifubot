@@ -84,20 +84,6 @@ public class PostMessageTask implements Runnable {
     private void postResponse(MessageChannel chan, ImageResponse response){
         // TODO: figure out how to use embed for source/post links
         // links cased in <> removes thumbnails/embeds
-
-        if(Config.debug){
-            if(response != null){
-                System.out.println("Response data: ");
-                System.out.println("    filename: " + response.getFileName());
-                System.out.println("    posturl: " + response.getPostURL());
-                System.out.println("    srcurl: " + response.getSourceURL());
-                System.out.println("    img size: " + response.getImageData().length);
-            }
-            else {
-                System.out.println("Response was null.");
-            }
-        }
-
         StringBuilder sourceMessage = new StringBuilder("");
         sourceMessage.append("Post: <")
                 .append(response.getPostURL())
@@ -119,13 +105,9 @@ public class PostMessageTask implements Runnable {
     private ImageResponse getApiResponse(Map<ApiObject, Integer> postCounts, int random) throws FileDeletedException {
 
         ApiObject api = decideApi(postCounts, random);
-        int page;
-        int offset;
-        int limit;
-
-        page = requestPage;
-        limit = 1;
-        offset = 0;
+        int page = requestPage;
+        final int offset = 0;
+        int limit = 1;
 
         URL postUrl = ApiConnector.constructApiUrl(api, limit, page, request.getSearchTags());
 
