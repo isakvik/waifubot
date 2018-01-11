@@ -18,7 +18,7 @@ public class Util {
 
     // remove parantheses, capitalize first letter
     public static String cleanNameTag(String tag) {
-        tag = tag.replaceAll("\\(.*\\)","");
+        tag = tag.replaceAll("_\\(.*\\)","");
         return tag.substring(0,1).toUpperCase() + tag.substring(1);
     }
 

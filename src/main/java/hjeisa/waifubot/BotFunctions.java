@@ -3,9 +3,11 @@ package hjeisa.waifubot;
 import hjeisa.waifubot.model.Request;
 import hjeisa.waifubot.posting.PostController;
 import net.dv8tion.jda.core.entities.MessageChannel;
+import net.dv8tion.jda.core.entities.PrivateChannel;
 import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.User;
 
+import javax.xml.soap.Text;
 import java.io.*;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
@@ -160,7 +162,7 @@ public class BotFunctions {
                 chan.sendMessage(Util.cleanNameTag(girlToPost) + "!").queue();
             }
             Request request = new Request(chan, 0,
-                    girlToPost + " 1girl " + excludeMap.getOrDefault(user.getIdLong(), ""));
+                    girlToPost + " 1girl rating:safe " + excludeMap.getOrDefault(user.getIdLong(), ""));
             postController.schedulePostOnce(request);
         }
     }
@@ -286,7 +288,7 @@ public class BotFunctions {
             if(content.toLowerCase().equals(alias)){
                 chan.sendMessage("Supported commands:\n" +
                         "!ping - \"Pong!\"\n" +
-                        "!post (flag) <interval> <tags> - posts picture matching tags each interval (down to 1 minute)\n" +
+                        "!post (flag) <interval> <tags> - posts picture matching tags each interval (down to 5 minutes)\n" +
                         "!picture (flag) (tags) - posts once picture matching tags\n" +
                         "!cancel <tags> - cancels request in channel matching tags\n" +
                         "!cancel - cancels all requests in channel\n" +
@@ -302,20 +304,18 @@ public class BotFunctions {
 
     private static String getNSFWTag(MessageChannel chan, String argument) throws Exception {
         // TODO: redo tag handling so that additive tags can be used
-        if(argument.equals("-r")){
-            if(chan instanceof TextChannel && ((TextChannel) chan).isNSFW())
-                return "";
+        Map<String,String> tags = new HashMap<>();
+        tags.put("-r","");
+        tags.put("-n"," -rating:safe");
+        tags.put("-x"," rating:explicit");
+
+        if(chan instanceof TextChannel){
+            if(((TextChannel) chan).isNSFW())
+                return tags.get(argument);
             else throw new Exception();
         }
-        if(argument.equals("-n")){
-            if(chan instanceof TextChannel && ((TextChannel) chan).isNSFW())
-                return " -rating:safe";
-            else throw new Exception();
-        }
-        else if(argument.equals("-x")){
-            if(chan instanceof TextChannel && ((TextChannel) chan).isNSFW())
-                return " rating:explicit";
-            else throw new Exception();
+        else if(chan instanceof PrivateChannel){
+            return tags.get(argument);
         }
         return null;
     }
