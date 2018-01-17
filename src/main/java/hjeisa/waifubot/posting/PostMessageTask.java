@@ -22,6 +22,7 @@ public class PostMessageTask implements Runnable {
 
     private Request request;
     private int requestPage;
+    private int retryCounter;
 
     /*
         procedure:
@@ -40,6 +41,10 @@ public class PostMessageTask implements Runnable {
     @Override
     public void run() {
         MessageChannel chan = request.getChannel();
+        if(retryCounter >= Config.max_post_retry_attempts){
+            chan.sendMessage("Exhausted amount of retries while trying to find a suitable image. I'm sorry!").queue();
+            return;
+        }
 
         try {
             Map<ApiObject, Integer> postCounts = ApiConnector.getPostCounts(request.getSearchTags(), request.getSearchTagSize());
@@ -70,15 +75,18 @@ public class PostMessageTask implements Runnable {
             request.alreadyPosted.add(random);
 
             ImageResponse response = getApiResponse(postCounts, random);
+            retryCounter = 0;
             postResponse(chan, response);
         }
         catch (FileDeletedException fde){
             chan.sendMessage("Looked up deleted file, retrying for new post...").queue();
+            retryCounter++;
             run();
         }
         catch (ForbiddenTagException fte){
             //chan.sendMessage("Result contained forbidden tag, retrying for new post...").queue();
             System.out.println("ForbiddenTagException thrown. Retrying for new post...");
+            retryCounter++;
             run();
         }
         catch (Exception e){
