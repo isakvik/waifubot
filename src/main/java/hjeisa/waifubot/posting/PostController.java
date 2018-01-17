@@ -2,13 +2,11 @@ package hjeisa.waifubot.posting;
 
 import hjeisa.waifubot.Config;
 import hjeisa.waifubot.Util;
+import hjeisa.waifubot.exception.ForbiddenTagException;
 import hjeisa.waifubot.model.Request;
 import net.dv8tion.jda.core.entities.MessageChannel;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -21,6 +19,11 @@ public class PostController {
     private final ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
 
     public void schedulePostCycle(Request request) {
+        if(requestContainsForbiddenTag(request)){
+            request.getChannel().sendMessage("Please do not do that.").queue();
+            return;
+        }
+
         // TODO: see if you can store the schedules to file
         PostMessageTask task = new PostMessageTask(request);
         ScheduledFuture future = service.scheduleAtFixedRate(task, 0, request.getTimeInterval(), TimeUnit.SECONDS);
@@ -33,6 +36,11 @@ public class PostController {
     }
 
     public void schedulePostOnce(Request request) {
+        if(requestContainsForbiddenTag(request)){
+            request.getChannel().sendMessage("Please do not do that.").queue();
+            return;
+        }
+
         PostMessageTask task = new PostMessageTask(request);
         service.schedule(task, 0, TimeUnit.SECONDS);
         if(Config.debug){
@@ -75,5 +83,10 @@ public class PostController {
         }
 
         return amountCancelled;
+    }
+
+    private boolean requestContainsForbiddenTag(Request request) {
+        String[] tagArray = request.getSearchTagsWithoutExcludes().split(" ");
+        return !Arrays.asList(tagArray).contains("rating:safe") && !Collections.disjoint(Arrays.asList(tagArray), Config.forbidden_tags);
     }
 }
