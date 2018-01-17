@@ -309,6 +309,10 @@ public class BotFunctions {
         tags.put("-n"," -rating:safe");
         tags.put("-x"," rating:explicit");
 
+        if(!tags.containsKey(argument)){
+            return null;
+        }
+
         if(chan instanceof TextChannel){
             if(((TextChannel) chan).isNSFW())
                 return tags.get(argument);
@@ -356,6 +360,14 @@ public class BotFunctions {
         }
         catch (IOException e){
             e.printStackTrace();
+        }
+    }
+
+    // posts message and logs to console
+    private static void postMessageAndLog(MessageChannel chan, String message){
+        chan.sendMessage(message).queue();
+        if(Config.debug){
+            System.out.println("<" + Config.bot_name + "> " + message);
         }
     }
 }
