@@ -2,6 +2,7 @@ package hjeisa.waifubot.api;
 
 import hjeisa.waifubot.Config;
 import hjeisa.waifubot.exception.FileDeletedException;
+import hjeisa.waifubot.exception.ForbiddenTagException;
 import hjeisa.waifubot.model.ApiObject;
 import hjeisa.waifubot.model.ImageResponse;
 import org.w3c.dom.*;
@@ -12,10 +13,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
 import java.net.*;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 
 import static hjeisa.waifubot.api.Imageboards.imageboards;
 
@@ -119,9 +117,14 @@ public class ApiConnector {
     }
 
     // returns object holding all info needed to post an image
-    public static ImageResponse parseResponse(ApiObject api, String content, int offset) throws FileDeletedException {
+    public static ImageResponse parseResponse(ApiObject api, String content, int offset)
+            throws FileDeletedException, ForbiddenTagException {
         ImageResponse response = null;
 
+        String ratingStringTag;
+        String tagStringTag;
+        String fileUrlTag;
+        String sampleUrlTag;
         try {
             InputStream is = new ByteArrayInputStream(content.getBytes());
             DocumentBuilder dBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
@@ -130,16 +133,30 @@ public class ApiConnector {
             Element posts = doc.getDocumentElement();
             NodeList postNodeList = posts.getChildNodes();
             Node post = postNodeList.item(offset);
-
-            String fileUrlTag;
-            String sampleUrlTag;
             if(api.getName().equals("danbooru")){
+                tagStringTag = "tag-string";
                 fileUrlTag = "file-url";
                 sampleUrlTag = "large-file-url";
             }
-            else{
+            else {
+                tagStringTag = "tags";
                 fileUrlTag = "file_url";
                 sampleUrlTag = "sample_url";
+            }
+            ratingStringTag = "rating";
+
+            // filter forbidden results
+            // TODO: move to own method
+            String rating = getContentFromXmlTag(post, ratingStringTag);
+            if(rating != null && !rating.equals("s")){
+                String postTags = getContentFromXmlTag(post, tagStringTag);
+                if(postTags != null){
+                    // check if tag list contains any forbidden tags
+                    String[] tagList = postTags.split(" ");
+                    if(!Collections.disjoint(Arrays.asList(tagList), Config.forbidden_tags)){
+                        throw new ForbiddenTagException();
+                    }
+                }
             }
 
             String fileUrl = getContentFromXmlTag(post, fileUrlTag);

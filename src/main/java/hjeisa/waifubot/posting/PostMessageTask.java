@@ -2,6 +2,7 @@ package hjeisa.waifubot.posting;
 
 import hjeisa.waifubot.Config;
 import hjeisa.waifubot.exception.FileDeletedException;
+import hjeisa.waifubot.exception.ForbiddenTagException;
 import hjeisa.waifubot.model.ApiObject;
 import hjeisa.waifubot.model.ImageResponse;
 import hjeisa.waifubot.model.Request;
@@ -75,6 +76,11 @@ public class PostMessageTask implements Runnable {
             chan.sendMessage("Looked up deleted file, retrying for new post...").queue();
             run();
         }
+        catch (ForbiddenTagException fte){
+            //chan.sendMessage("Result contained forbidden tag, retrying for new post...").queue();
+            System.out.println("ForbiddenTagException thrown. Retrying for new post...");
+            run();
+        }
         catch (Exception e){
             chan.sendMessage("An unexpected error occurred while processing your request.").queue();
             e.printStackTrace();
@@ -102,7 +108,8 @@ public class PostMessageTask implements Runnable {
         }
     }
 
-    private ImageResponse getApiResponse(Map<ApiObject, Integer> postCounts, int random) throws FileDeletedException {
+    private ImageResponse getApiResponse(Map<ApiObject, Integer> postCounts, int random)
+            throws FileDeletedException, ForbiddenTagException {
 
         ApiObject api = decideApi(postCounts, random);
         int page = requestPage;

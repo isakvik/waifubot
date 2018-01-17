@@ -34,5 +34,5 @@ public class Imageboards {
                 "http://danbooru.donmai.us/tags.xml?search[name]=",
                 1));
          imageboards = Collections.unmodifiableList(list);
+    }
 }
-        }
