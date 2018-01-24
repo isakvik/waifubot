@@ -19,6 +19,9 @@ import static hjeisa.waifubot.api.Imageboards.imageboards;
 
 public class ApiConnector {
 
+    // gelbooru returns error when getting results past the first 20k results of a search
+    private static final int gelbooru_max_image_results = 20000;
+
     // returns hashmap containing postcount for results on each imageboard
     public static Map<ApiObject, Integer> getPostCounts(String searchTags, int searchTagSize) {
         Map<ApiObject, Integer> postCounts = new HashMap<>();
@@ -64,6 +67,9 @@ public class ApiConnector {
                 }
                 else {
                     postCount = Integer.parseInt(rootTag.getAttribute("count"));
+                    if(api.getName().equals("gelbooru")){
+                        postCount = Math.min(postCount, gelbooru_max_image_results);
+                    }
                 }
 
                 postCounts.put(api, postCount);
@@ -182,6 +188,9 @@ public class ApiConnector {
 
         }
         catch (SAXException | ParserConfigurationException | IOException e) {
+            System.err.println("-- Parsing error occurred:");
+            System.err.println(content);
+            System.err.println("-- Exception:");
             e.printStackTrace();
         }
 
