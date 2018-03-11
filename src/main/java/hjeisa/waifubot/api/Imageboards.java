@@ -17,7 +17,7 @@ public class Imageboards {
                 50));
         list.add(new ApiObject("gelbooru",
                 "https://gelbooru.com/index.php?page=dapi&s=post&q=index&",
-                "https://gelbooru.org/index.php?page=post&s=view&id=",
+                "https://gelbooru.com/index.php?page=post&s=view&id=",
                 50));
         list.add(new ApiObject("konachan",
                 "http://konachan.com/post.xml?",
