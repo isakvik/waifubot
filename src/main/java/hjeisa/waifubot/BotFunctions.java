@@ -112,8 +112,8 @@ public class BotFunctions {
         // post one picture with (optional) tags
         String[] arguments = content.toLowerCase().split(" ");
 
-        if(arguments[0].equals("!picture")) {
-            int searchTagIndex = "!picture".length();
+        if(arguments[0].equals("!picture") || arguments[0].equals("!pic")) {
+            int searchTagIndex = arguments[0].length();
             String searchTags = "";
 
             String nsfwTag = null;
@@ -303,11 +303,13 @@ public class BotFunctions {
                 chan.sendMessage("Supported commands:\n" +
                         "!ping - \"Pong!\"\n" +
                         "!post (flag) <interval> <tags> - posts picture matching tags each interval (down to 5 minutes)\n" +
-                        "!picture (flag) (tags) - posts once picture matching tags\n" +
+                        "!picture (flag) (tags) - posts once picture matching tags (alias: !pic)\n" +
                         "!cancel <tags> - cancels request in channel matching tags\n" +
                         "!cancel - cancels all requests in channel\n" +
                         "!list - lists all posting cycles in channel currently running\n" +
-                        "!bestgirl (set <tags>) - posts a picture of the user's favorite character (1girl tag is included in searches)\n" +
+                        "!bestgirl (flag OR set <tags>) - posts a picture of the user's favorite character (1girl tag is included in searches)\n" +
+                        "!exclude <tags> - excludes tag from all future searches (will exclude danbooru results from searches)\n" +
+                        "!excludes (clear) - shows current excluded tags, or clears the list\n" +
                         "\n" +
                         "-n, -x, -r flags can be used for NSFW, exclusively NSFW, and all results respectively.").queue();
             }
