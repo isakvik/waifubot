@@ -141,8 +141,10 @@ public class BotFunctions {
         // posts user's best girl if one is found
         if(content.toLowerCase().startsWith("!bestgirl")) {
             String girlToPost;
+            String[] arguments = content.split(" ");
+
             // sets user's best girl
-            if(content.toLowerCase().startsWith("!bestgirl set ") && content.split(" ").length >= 3){
+            if(content.toLowerCase().startsWith("!bestgirl set ") && arguments.length >= 3){
                 girlToPost = content.substring("!bestgirl set ".length());
                 bestGirlMap.put(user.getIdLong(), girlToPost);
                 if(!saveMap(bestGirlMap, Config.best_girl_data_filename)){
@@ -161,8 +163,20 @@ public class BotFunctions {
                 }
                 chan.sendMessage(Util.cleanNameTag(girlToPost) + "!").queue();
             }
+
+            String nsfwTag = "";
+            if(arguments.length >= 3) {
+                try {
+                    nsfwTag = getNSFWTag(chan, arguments[1]);
+                } catch (Exception e) {
+                    chan.sendMessage("Channel is not set as a NSFW channel.").queue();
+                    return;
+                }
+            }
+            if(nsfwTag == null) nsfwTag = " rating:safe";
+
             Request request = new Request(chan, 0,
-                    girlToPost + " 1girl rating:safe " + excludeMap.getOrDefault(user.getIdLong(), ""));
+                girlToPost + " 1girl" + nsfwTag + " " + excludeMap.getOrDefault(user.getIdLong(), ""));
             postController.schedulePostOnce(request);
         }
     }
