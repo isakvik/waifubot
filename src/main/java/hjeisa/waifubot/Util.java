@@ -8,12 +8,38 @@ import java.util.*;
 public class Util {
 
     public static String parseDuration(long duration) {
-        // TODO: this is pretty lazy. return a better format
+        StringBuilder retStr = new StringBuilder();
+
         long hours = duration / 3600;
         long minutes = duration % 3600 / 60;
         long seconds = duration % 60;
 
-        return String.format("%02d:%02d:%02d", hours, minutes, seconds);
+        if(hours > 0) {
+            if(hours > 1)
+                retStr.append(hours).append(" hours");
+            else
+                retStr.append("hour");
+
+            if(minutes > 0 && seconds > 0)
+                retStr.append(", ");
+            else if(minutes > 0)
+                retStr.append(" and ");
+        }
+
+        if(minutes > 0) {
+            if(minutes > 1)
+                retStr.append(minutes).append(" minutes");
+            else
+                retStr.append(minutes);
+
+            if(seconds > 0)
+                retStr.append(" and ");
+        }
+
+        if(seconds > 0)
+            retStr.append((seconds > 1 ? "seconds" : "second"));
+
+        return retStr.toString();
     }
 
     // remove parantheses, capitalize first letter
