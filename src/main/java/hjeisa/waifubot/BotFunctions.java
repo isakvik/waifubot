@@ -125,6 +125,7 @@ public class BotFunctions {
                     return;
                 }
             }
+
             if(nsfwTag == null) nsfwTag = " rating:safe";
             else                searchTagIndex += arguments[1].length() + 1;
 
@@ -165,7 +166,7 @@ public class BotFunctions {
             }
 
             String nsfwTag = "";
-            if(arguments.length >= 3) {
+            if(arguments.length >= 2) {
                 try {
                     nsfwTag = getNSFWTag(chan, arguments[1]);
                 } catch (Exception e) {
