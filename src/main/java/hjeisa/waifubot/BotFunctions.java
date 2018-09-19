@@ -98,7 +98,7 @@ public class BotFunctions {
                     }
                 }
                 catch (DateTimeParseException dtpe){
-                    chan.sendMessage("Could not find duration. Proper usage is `!post <interval> <search tags>`").queue();
+                    chan.sendMessage("Could not find duration. Proper usage is `!post <interval> <search tags>` - Example: `!post 24h touhou`").queue();
                 }
             }
             else {
@@ -312,7 +312,7 @@ public class BotFunctions {
                         "!exclude <tags> - excludes tag from all future searches (will exclude danbooru results from searches)\n" +
                         "!excludes (clear) - shows current excluded tags, or clears the list\n" +
                         "\n" +
-                        "-n, -x, -r flags can be used for NSFW, exclusively NSFW, and all results respectively.").queue();
+                        "-n, -x, -r flags can be used for NSFW, exclusively NSFW, and all results respectively. These are restricted to NSFW channels.").queue();
             }
         }
     }
