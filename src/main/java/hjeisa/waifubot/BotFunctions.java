@@ -6,8 +6,9 @@ import net.dv8tion.jda.core.entities.MessageChannel;
 import net.dv8tion.jda.core.entities.PrivateChannel;
 import net.dv8tion.jda.core.entities.TextChannel;
 import net.dv8tion.jda.core.entities.User;
+import net.dv8tion.jda.core.utils.tuple.ImmutablePair;
+import net.dv8tion.jda.core.utils.tuple.Pair;
 
-import javax.xml.soap.Text;
 import java.io.*;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
@@ -15,7 +16,7 @@ import java.util.*;
 
 public class BotFunctions {
 
-    // TODO: add danbooru support, add tag limit check/support, add random/all sfws flag og ignore excludes flag
+    // TODO: add ignore excludes flag
 
     // schedules post cycles
     private static PostController postController = new PostController();
@@ -88,7 +89,7 @@ public class BotFunctions {
                 }
 
                 if(Util.findRequestBySearchText(requestList, chan, searchTags) == null){
-                    Request request = new Request(chan, intervalSeconds, searchTags);
+                    Request request = new Request(chan, user, intervalSeconds, searchTags);
                     requestList.add(request);
                     postController.schedulePostCycle(request);
 
@@ -135,7 +136,7 @@ public class BotFunctions {
                 + " " + excludeMap.getOrDefault(user.getIdLong(), "");
         searchTags = searchTags.trim();
 
-        Request request = new Request(chan, 0, searchTags);
+        Request request = new Request(chan, user, 0, searchTags);
         postController.schedulePostOnce(request);
     }
 
@@ -180,9 +181,30 @@ public class BotFunctions {
         }
         if(nsfwTag == null) nsfwTag = " rating:safe";
 
-        Request request = new Request(chan, 0,
+        Request request = new Request(chan, user, 0,
             girlToPost + " 1girl" + nsfwTag + " " + excludeMap.getOrDefault(user.getIdLong(), ""));
         postController.schedulePostOnce(request);
+    }
+
+    static void delete(User user, String content, MessageChannel chan) {
+        //deletes the previous posted image from user
+        if(!content.equalsIgnoreCase("!delete"))
+            return;
+
+        // TODO: migrate pairs to some kind of model type
+        Pair<Long, Long> requestIdPair = new ImmutablePair<>(chan.getIdLong(), user.getIdLong());
+        Pair<Long, Long> messageIdPair = postController.getLastRequestResponseByUser().get(requestIdPair);
+        if(messageIdPair != null) {
+            chan.deleteMessageById(messageIdPair.getLeft()).queue(
+                aVoid -> {
+                    chan.deleteMessageById(messageIdPair.getRight()).queue(); // don't care whether this fails
+                    chan.sendMessage("S-sorry!").queue();
+                },
+                throwable -> chan.sendMessage("I can't seem to find what your latest request here was... maybe it's already gone?").queue());
+        }
+        else {
+            chan.sendMessage("I don't remember what your latest request here was, I apologize!").queue();
+        }
     }
 
     static void cancel(String content, MessageChannel chan){
@@ -308,15 +330,16 @@ public class BotFunctions {
         for(String alias : aliases){
             if(content.toLowerCase().equals(alias)){
                 chan.sendMessage("Supported commands:\n" +
-                        "!ping - \"Pong!\"\n" +
-                        "!post (flag) <interval> <tags> - posts picture matching tags each interval (down to 5 minutes)\n" +
-                        "!picture (flag) (tags) - posts once picture matching tags (alias: !pic)\n" +
-                        "!cancel <tags> - cancels request in channel matching tags\n" +
-                        "!cancel - cancels all requests in channel\n" +
-                        "!list - lists all posting cycles in channel currently running\n" +
-                        "!bestgirl (flag OR set <tags>) - posts a picture of the user's favorite character (1girl tag is included in searches)\n" +
-                        "!exclude <tags> - excludes tag from all future searches (will exclude danbooru results from searches)\n" +
-                        "!excludes (clear) - shows current excluded tags, or clears the list\n" +
+                        "`!ping` - \"Pong!\"\n" +
+                        "`!post (flag) <interval> <tags>` - posts picture matching tags each interval (down to 5 minutes)\n" +
+                        "`!picture (flag) (tags)` - posts once picture matching tags (alias: !pic)\n" +
+                        "`!cancel <tags>` - cancels request in channel matching tags\n" +
+                        "`!cancel` - cancels all requests in channel\n" +
+                        "`!list` - lists all posting cycles in channel currently running\n" +
+                        "`!bestgirl (flag OR set <tags>)` - posts a picture of the user's favorite character (1girl tag is included in searches)\n" +
+                        "`!exclude <tags>` - excludes tag from all future searches (will exclude danbooru results from searches)\n" +
+                        "`!excludes (clear)` - shows current excluded tags, or clears the list\n" +
+                        "`!delete` - deletes latest post from you in the current channel\n" +
                         "\n" +
                         "-n, -x, -r flags can be used for NSFW, exclusively NSFW, and all results respectively. These are restricted to NSFW channels.").queue();
             }

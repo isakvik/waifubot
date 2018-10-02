@@ -1,12 +1,14 @@
 package hjeisa.waifubot.model;
 
 import net.dv8tion.jda.core.entities.MessageChannel;
+import net.dv8tion.jda.core.entities.User;
 
 import java.util.HashSet;
 
 public class Request {
 
     private MessageChannel channel;
+    private User user;
 
     private long timeInterval;
     private String searchTags;
@@ -14,8 +16,9 @@ public class Request {
 
     public HashSet<Integer> alreadyPosted;
 
-    public Request(MessageChannel channel, long timeInterval, String searchTags) {
+    public Request(MessageChannel channel, User user, long timeInterval, String searchTags) {
         this.channel = channel;
+        this.user = user;
         this.timeInterval = timeInterval;
         this.searchTags = searchTags;
         this.searchTagSize = searchTags.split(" ").length;
@@ -25,6 +28,10 @@ public class Request {
 
     public MessageChannel getChannel() {
         return channel;
+    }
+
+    public User getUser() {
+        return user;
     }
 
     public long getTimeInterval() {

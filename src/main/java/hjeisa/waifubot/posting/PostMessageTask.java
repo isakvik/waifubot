@@ -7,20 +7,24 @@ import hjeisa.waifubot.model.ApiObject;
 import hjeisa.waifubot.model.ImageResponse;
 import hjeisa.waifubot.model.Request;
 import hjeisa.waifubot.api.ApiConnector;
-import javafx.util.Pair;
+import net.dv8tion.jda.core.entities.Message;
 import net.dv8tion.jda.core.entities.MessageChannel;
+import net.dv8tion.jda.core.requests.RequestFuture;
+import net.dv8tion.jda.core.requests.RestAction;
+import net.dv8tion.jda.core.utils.tuple.ImmutablePair;
 
-import java.io.File;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
 
 public class PostMessageTask implements Runnable {
 
     private Request request;
+    private PostController postController;
+
     private int requestPage;
     private int retryCounter;
 
@@ -34,7 +38,8 @@ public class PostMessageTask implements Runnable {
             get picture from api with page id matching int, retrieve image
      */
 
-    public PostMessageTask(Request request) {
+    public PostMessageTask(PostController postController, Request request) {
+        this.postController = postController;
         this.request = request;
     }
 
@@ -98,21 +103,32 @@ public class PostMessageTask implements Runnable {
     private void postResponse(MessageChannel chan, ImageResponse response){
         // TODO: figure out how to use embed for source/post links
         // links cased in <> removes thumbnails/embeds
-        StringBuilder sourceMessage = new StringBuilder("");
-        sourceMessage.append("Post: <")
+        StringBuilder sourceMessageContent = new StringBuilder("");
+        sourceMessageContent.append("Post: <")
                 .append(response.getPostURL())
                 .append(">\nSource: ")
-                .append(response.getSourceURL().isEmpty() ? "none" : "<" + response.getSourceURL() + ">");
+                .append(response.getSourceURL().isEmpty() ? "none given" : "<" + response.getSourceURL() + ">");
 
-        chan.sendFile(response.getImageData(), response.getFileName(), null).queue(message1 ->
-                // post sources directly after file is done uploading
-                chan.sendMessage(sourceMessage.toString()).queue()
-        );
+        try {
+            RequestFuture<Message> imageMessageAction = chan.sendFile(response.getImageData(), response.getFileName(), null).submit();
+            Message imageUploadMessage = imageMessageAction.get(); // blocks
+
+            RequestFuture<Message> sourceMessageAction = chan.sendMessage(sourceMessageContent.toString()).submit();
+            Message sourceMessage = sourceMessageAction.get();
+
+            // store
+            postController.getLastRequestResponseByUser().put(
+                    new ImmutablePair<>(request.getChannel().getIdLong(), request.getUser().getIdLong()),
+                    new ImmutablePair<>(imageUploadMessage.getIdLong(), sourceMessage.getIdLong())
+            );
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+        }
 
         if (Config.debug) {
             System.out.println("File uploaded: " + response.getFileName());
             System.out.println("Requested (tags: " + request.getSearchTags() + "): #" + chan.getName() + ": " +
-                    "<" + Config.bot_name + "> " + sourceMessage);
+                    "<" + Config.bot_name + "> " + sourceMessageContent);
         }
     }
 
@@ -125,7 +141,6 @@ public class PostMessageTask implements Runnable {
         int limit = 1;
 
         URL postUrl = ApiConnector.constructApiUrl(api, limit, page, request.getSearchTags());
-
         String content = ApiConnector.getPageContent(postUrl);
 
         // logs stuff
@@ -149,8 +164,7 @@ public class PostMessageTask implements Runnable {
      */
     private ApiObject decideApi(Map<ApiObject, Integer> postCounts, int random){
         // create iterable list from postcounts map
-        ArrayList<Map.Entry<ApiObject, Integer>> entryList = new ArrayList<>();
-        entryList.addAll(postCounts.entrySet());
+        ArrayList<Map.Entry<ApiObject, Integer>> entryList = new ArrayList<>(postCounts.entrySet());
         entryList.sort((o1, o2) -> o1.getValue() < o2.getValue() ? 1 : Objects.equals(o1.getValue(), o2.getValue()) ? 0 : -1);
 
         ApiObject chosenApi = null;

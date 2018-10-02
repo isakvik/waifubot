@@ -2,9 +2,9 @@ package hjeisa.waifubot.posting;
 
 import hjeisa.waifubot.Config;
 import hjeisa.waifubot.Util;
-import hjeisa.waifubot.exception.ForbiddenTagException;
 import hjeisa.waifubot.model.Request;
 import net.dv8tion.jda.core.entities.MessageChannel;
+import net.dv8tion.jda.core.utils.tuple.Pair;
 
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -18,6 +18,9 @@ public class PostController {
     private Map<Request, ScheduledFuture> futures = new HashMap<>();
     private final ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
 
+    // used for !delete
+    private Map<Pair<Long,Long>, Pair<Long,Long>> lastRequestResponseByUser = new HashMap<>();
+
     public void schedulePostCycle(Request request) {
         if(requestContainsForbiddenTag(request)){
             request.getChannel().sendMessage("Please do not do that.").queue();
@@ -25,7 +28,7 @@ public class PostController {
         }
 
         // TODO: see if you can store the schedules to file
-        PostMessageTask task = new PostMessageTask(request);
+        PostMessageTask task = new PostMessageTask(this, request);
         ScheduledFuture future = service.scheduleAtFixedRate(task, 0, request.getTimeInterval(), TimeUnit.SECONDS);
         futures.put(request, future);
 
@@ -41,7 +44,7 @@ public class PostController {
             return;
         }
 
-        PostMessageTask task = new PostMessageTask(request);
+        PostMessageTask task = new PostMessageTask(this, request);
         service.schedule(task, 0, TimeUnit.SECONDS);
         if(Config.debug){
             System.out.println("Posting once: \"" + request.getSearchTags() + "\" for #" + request.getChannel().getName());
@@ -88,5 +91,9 @@ public class PostController {
     private boolean requestContainsForbiddenTag(Request request) {
         String[] tagArray = request.getSearchTagsWithoutExcludes().split(" ");
         return !Arrays.asList(tagArray).contains("rating:safe") && !Collections.disjoint(Arrays.asList(tagArray), Config.forbidden_tags);
+    }
+
+    public Map<Pair<Long,Long>, Pair<Long, Long>> getLastRequestResponseByUser() {
+        return lastRequestResponseByUser;
     }
 }

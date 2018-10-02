@@ -43,7 +43,7 @@ public class BotMessageListener extends ListenerAdapter {
         BotFunctions.picture(user, content, chan);
         BotFunctions.bestgirl(user, content, chan);
         BotFunctions.delete(user, content, chan);
-        //BotFunctions.cancel(content, chan);
+        BotFunctions.cancel(content, chan);
         BotFunctions.list(content, chan);
         BotFunctions.exclude(user, content, chan);
         BotFunctions.excludes(user, content, chan);
