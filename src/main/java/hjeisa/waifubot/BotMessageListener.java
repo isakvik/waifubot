@@ -30,20 +30,20 @@ public class BotMessageListener extends ListenerAdapter {
         // remove unneeded whitespace in commands
         content = content.replaceAll("\\s+", " ");
         // replace anti-markdown backslashes
-        content = content.replaceAll("\\\\\\_", "_");
+        content = content.replaceAll("\\\\_", "_");
         content = content.replaceAll("\\\\\\*", "*");
 
-        /* if(Config.debug){
-            System.out.println("Received message: "
-                    + chan.getName() + ": <"
-                    + user.getName() + "> "
-                    + content);
-        } */
+        if(Config.debug){
+            if(user.getIdLong() != Config.bot_administrator_user_id)
+                return;
+        }
+
         BotFunctions.ping(content, chan);
         BotFunctions.post(user, content, chan);
         BotFunctions.picture(user, content, chan);
         BotFunctions.bestgirl(user, content, chan);
-        BotFunctions.cancel(content, chan);
+        BotFunctions.delete(user, content, chan);
+        //BotFunctions.cancel(content, chan);
         BotFunctions.list(content, chan);
         BotFunctions.exclude(user, content, chan);
         BotFunctions.excludes(user, content, chan);
