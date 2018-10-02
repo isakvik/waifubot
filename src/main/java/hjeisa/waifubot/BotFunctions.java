@@ -170,7 +170,7 @@ public class BotFunctions {
             chan.sendMessage(Util.cleanNameTag(girlToPost) + "!").queue();
         }
 
-        String nsfwTag = "";
+        String nsfwTag = null;
         if(arguments.length >= 2) {
             try {
                 nsfwTag = getNSFWTag(chan, arguments[1]);
