@@ -40,71 +40,71 @@ public class BotFunctions {
 
     static void post(User user, String content, MessageChannel chan) {
         // create posting cycle
-        if(content.toLowerCase().startsWith("!post")) {
-            String[] arguments = content.split(" ");
+        if(!content.toLowerCase().startsWith("!post"))
+            return;
 
-            if(arguments.length >= 3){
-                int durationIndex = content.indexOf(' ');
+        String[] arguments = content.split(" ");
 
-                String nsfwTag;
-                try {
-                    nsfwTag = getNSFWTag(chan, arguments[1]);
-                } catch (Exception e) {
-                    chan.sendMessage("Channel is not set as a NSFW channel.").queue();
-                    return;
-                }
+        if(arguments.length >= 3){
+            int durationIndex = content.indexOf(' ');
 
-                if(nsfwTag == null) nsfwTag = " rating:safe";
-                else                durationIndex += arguments[1].length() + 1;
-
-                int searchTagIndex = content.indexOf(' ',durationIndex + 1);
-                if(searchTagIndex == -1){
-                    // duplicate error...
-                    chan.sendMessage("Invalid arguments. Correct form is: "+
-                            "`!post (-flag) <interval> <search tags>`").queue();
-                    return;
-                }
-
-                String intervalString = content.substring(durationIndex + 1, searchTagIndex);
-                String searchTags = (content.substring(searchTagIndex + 1) + nsfwTag + " " +
-                                    excludeMap.getOrDefault(user.getIdLong(), "")).trim();
-
-                try {
-                    // Duration.parse requires "pt" prefix
-                    long intervalSeconds = Duration.parse("pt" + intervalString).getSeconds();
-                    if(intervalSeconds < 0){
-                        chan.sendMessage("Time can't be negative.").queue();
-                        return;
-                    }
-
-                    if(!Config.debug){
-                        if (intervalSeconds < Config.min_posting_interval) {
-                            chan.sendMessage("Time is too short. Minimum interval is " +
-                                    Util.parseDuration(Config.min_posting_interval) + ".").queue();
-                            return;
-                        }
-                    }
-
-                    if(Util.findRequestBySearchText(requestList, chan, searchTags) == null){
-                        Request request = new Request(chan, intervalSeconds, searchTags);
-                        requestList.add(request);
-                        postController.schedulePostCycle(request);
-
-                        chan.sendMessage("Request added. Posting pictures matching \"" + searchTags + "\" tags every " +
-                                Util.parseDuration(intervalSeconds) + ".").queue();
-                    }
-                    else {
-                        chan.sendMessage("I'm already posting pictures with the same tags in this channel.").queue();
-                    }
-                }
-                catch (DateTimeParseException dtpe){
-                    chan.sendMessage("Could not find duration. Proper usage is `!post <interval> <search tags>` - Example: `!post 24h touhou`").queue();
-                }
+            String nsfwTag;
+            try {
+                nsfwTag = getNSFWTag(chan, arguments[1]);
+            } catch (Exception e) {
+                chan.sendMessage("Channel is not set as a NSFW channel.").queue();
+                return;
             }
-            else {
+
+            if(nsfwTag == null) nsfwTag = " rating:safe";
+            else                durationIndex += arguments[1].length() + 1;
+
+            int searchTagIndex = content.indexOf(' ',durationIndex + 1);
+            if(searchTagIndex == -1){
+                // duplicate error...
                 chan.sendMessage("Invalid arguments. Correct form is: "+
                         "`!post (-flag) <interval> <search tags>`").queue();
+                return;
             }
+
+            String intervalString = content.substring(durationIndex + 1, searchTagIndex);
+            String searchTags = (content.substring(searchTagIndex + 1) + nsfwTag + " " +
+                                excludeMap.getOrDefault(user.getIdLong(), "")).trim();
+
+            try {
+                // Duration.parse requires "pt" prefix
+                long intervalSeconds = Duration.parse("pt" + intervalString).getSeconds();
+                if(intervalSeconds < 0){
+                    chan.sendMessage("Time can't be negative.").queue();
+                    return;
+                }
+
+                if(!Config.debug){
+                    if (intervalSeconds < Config.min_posting_interval) {
+                        chan.sendMessage("Time is too short. Minimum interval is " +
+                                Util.parseDuration(Config.min_posting_interval) + ".").queue();
+                        return;
+                    }
+                }
+
+                if(Util.findRequestBySearchText(requestList, chan, searchTags) == null){
+                    Request request = new Request(chan, intervalSeconds, searchTags);
+                    requestList.add(request);
+                    postController.schedulePostCycle(request);
+
+                    chan.sendMessage("Request added. Posting pictures matching \"" + searchTags + "\" tags every " +
+                            Util.parseDuration(intervalSeconds) + ".").queue();
+                }
+                else {
+                    chan.sendMessage("I'm already posting pictures with the same tags in this channel.").queue();
+                }
+            }
+            catch (DateTimeParseException dtpe){
+                chan.sendMessage("Could not understand duration. Proper usage is `!post <interval> <search tags>` - Example: `!post 24h touhou`").queue();
+            }
+        }
+        else {
+            chan.sendMessage("Invalid arguments. Proper usage is: `!post (-flag) <interval> <search tags>` - Example: `!post 24h touhou`").queue();
         }
     }
 
@@ -112,74 +112,77 @@ public class BotFunctions {
         // post one picture with (optional) tags
         String[] arguments = content.toLowerCase().split(" ");
 
-        if(arguments[0].equals("!picture") || arguments[0].equals("!pic")) {
-            int searchTagIndex = arguments[0].length();
-            String searchTags = "";
+        if(!arguments[0].equals("!picture") && !arguments[0].equals("!pic"))
+            return;
 
-            String nsfwTag = null;
-            if(arguments.length >= 2){
-                try {
-                    nsfwTag = getNSFWTag(chan, arguments[1]);
-                } catch (Exception e) {
-                    chan.sendMessage("Channel is not set as a NSFW channel.").queue();
-                    return;
-                }
+        int searchTagIndex = arguments[0].length();
+        String searchTags = "";
+
+        String nsfwTag = null;
+        if(arguments.length >= 2){
+            try {
+                nsfwTag = getNSFWTag(chan, arguments[1]);
+            } catch (Exception e) {
+                chan.sendMessage("Channel is not set as a NSFW channel.").queue();
+                return;
             }
-
-            if(nsfwTag == null) nsfwTag = " rating:safe";
-            else                searchTagIndex += arguments[1].length() + 1;
-
-            searchTags = content.substring(searchTagIndex) + nsfwTag
-                    + " " + excludeMap.getOrDefault(user.getIdLong(), "");
-            searchTags = searchTags.trim();
-            
-            Request request = new Request(chan, 0, searchTags);
-            postController.schedulePostOnce(request);
         }
+
+        if(nsfwTag == null) nsfwTag = " rating:safe";
+        else                searchTagIndex += arguments[1].length() + 1;
+
+        searchTags = content.substring(searchTagIndex) + nsfwTag
+                + " " + excludeMap.getOrDefault(user.getIdLong(), "");
+        searchTags = searchTags.trim();
+
+        Request request = new Request(chan, 0, searchTags);
+        postController.schedulePostOnce(request);
     }
 
     static void bestgirl(User user, String content, MessageChannel chan) {
         // posts user's best girl if one is found
-        if(content.toLowerCase().startsWith("!bestgirl")) {
-            String girlToPost;
-            String[] arguments = content.split(" ");
+        if(!content.toLowerCase().startsWith("!bestgirl")) {
+            return;
+        }
 
-            // sets user's best girl
-            if(content.toLowerCase().startsWith("!bestgirl set ") && arguments.length >= 3){
-                girlToPost = content.substring("!bestgirl set ".length());
-                bestGirlMap.put(user.getIdLong(), girlToPost);
-                if(!saveMap(bestGirlMap, Config.best_girl_data_filename)){
-                    chan.sendMessage("Ahh, I couldn't save your best girl to my data file. " +
-                            "I'll keep it in mind until I restart, though!").queue();
-                }
-                else {
-                    chan.sendMessage("Ok, recognized your best girl.").queue();
-                }
+        String girlToPost;
+        String[] arguments = content.split(" ");
+
+        // sets user's best girl
+        if(content.toLowerCase().startsWith("!bestgirl set ") && arguments.length >= 3){
+            girlToPost = content.substring("!bestgirl set ".length());
+            bestGirlMap.put(user.getIdLong(), girlToPost);
+            if(!saveMap(bestGirlMap, Config.best_girl_data_filename)){
+                chan.sendMessage("Ahh, I couldn't save your best girl to my data file. " +
+                        "I'll keep it in mind until I restart, though!").queue();
             }
             else {
-                girlToPost = bestGirlMap.get(user.getIdLong());
-                if(girlToPost == null){
-                    chan.sendMessage("Set your best girl with the `!bestgirl set <character>` command first.").queue();
-                    return;
-                }
-                chan.sendMessage(Util.cleanNameTag(girlToPost) + "!").queue();
+                chan.sendMessage("Ok, recognized your best girl.").queue();
             }
-
-            String nsfwTag = "";
-            if(arguments.length >= 2) {
-                try {
-                    nsfwTag = getNSFWTag(chan, arguments[1]);
-                } catch (Exception e) {
-                    chan.sendMessage("Channel is not set as a NSFW channel.").queue();
-                    return;
-                }
-            }
-            if(nsfwTag == null) nsfwTag = " rating:safe";
-
-            Request request = new Request(chan, 0,
-                girlToPost + " 1girl" + nsfwTag + " " + excludeMap.getOrDefault(user.getIdLong(), ""));
-            postController.schedulePostOnce(request);
         }
+        else {
+            girlToPost = bestGirlMap.get(user.getIdLong());
+            if(girlToPost == null){
+                chan.sendMessage("Set your best girl with the `!bestgirl set <character>` command first.").queue();
+                return;
+            }
+            chan.sendMessage(Util.cleanNameTag(girlToPost) + "!").queue();
+        }
+
+        String nsfwTag = "";
+        if(arguments.length >= 2) {
+            try {
+                nsfwTag = getNSFWTag(chan, arguments[1]);
+            } catch (Exception e) {
+                chan.sendMessage("Channel is not set as a NSFW channel.").queue();
+                return;
+            }
+        }
+        if(nsfwTag == null) nsfwTag = " rating:safe";
+
+        Request request = new Request(chan, 0,
+            girlToPost + " 1girl" + nsfwTag + " " + excludeMap.getOrDefault(user.getIdLong(), ""));
+        postController.schedulePostOnce(request);
     }
 
     static void cancel(String content, MessageChannel chan){
@@ -217,65 +220,68 @@ public class BotFunctions {
 
     static void list(String content, MessageChannel chan){
         // list all current posting cycles
-        if(content.toLowerCase().startsWith("!list")){
-            List<Request> requestsForChannel = Util.findAllRequestsByChannel(requestList, chan);
+        if(!content.toLowerCase().startsWith("!list"))
+            return;
 
-            if(requestsForChannel.size() > 0){
-                StringBuilder str = new StringBuilder("Image posting cycles for this channel: ");
-                for(Request req : requestsForChannel){
-                    str.append("\n- Tags: \"")
-                            .append(req.getSearchTags())
-                            .append("\" every ")
-                            .append(Util.parseDuration(req.getTimeInterval()));
-                }
-                chan.sendMessage(str.toString()).queue();
+        List<Request> requestsForChannel = Util.findAllRequestsByChannel(requestList, chan);
+
+        if(requestsForChannel.size() > 0){
+            StringBuilder str = new StringBuilder("Image posting cycles for this channel: ");
+            for(Request req : requestsForChannel){
+                str.append("\n- Tags: \"")
+                        .append(req.getSearchTags())
+                        .append("\" every ")
+                        .append(Util.parseDuration(req.getTimeInterval()));
             }
-            else {
-                chan.sendMessage("I'm not posting any images in this channel.").queue();
-            }
+            chan.sendMessage(str.toString()).queue();
+        }
+        else {
+            chan.sendMessage("I'm not posting any images in this channel.").queue();
         }
     }
 
     static void exclude(User user, String content, MessageChannel chan) {
         // TODO: figure out why extra space appears in list
         // create a personalized blacklist for each user, adding exclude tags to each request
-        if(content.toLowerCase().startsWith("!exclude ")){
-            ArrayList<String> tagList = new ArrayList<>(Arrays.asList(
-                    content.substring("!exclude ".length()).split(" ")));
-            ArrayList<String> excludeList = new ArrayList<>(Arrays.asList(
-                    excludeMap.getOrDefault(user.getIdLong(), "").split(" ")));
-            boolean changed = false;
+        if(!content.toLowerCase().startsWith("!exclude "))
+            return;
 
-            for(String tag : tagList){
-                tag = tag.replaceAll("\\s"," ");
-                if(!tag.startsWith("-")){
-                    tag = "-" + tag;
-                }
-                if(!excludeList.contains(tag)){
-                    excludeList.add(tag);
-                    changed = true;
-                }
+        ArrayList<String> tagList = new ArrayList<>(Arrays.asList(
+                content.substring("!exclude ".length()).split(" ")));
+        ArrayList<String> excludeList = new ArrayList<>(Arrays.asList(
+                excludeMap.getOrDefault(user.getIdLong(), "").split(" ")));
+        boolean changed = false;
+
+        for(String tag : tagList){
+            tag = tag.replaceAll("\\s"," ");
+            if(!tag.startsWith("-")){
+                tag = "-" + tag;
             }
-
-            if(changed){
-                StringBuilder sb = new StringBuilder();
-                for(String exclude : excludeList)
-                    sb.append(exclude).append(" ");
-
-                // will update list
-                excludeMap.put(user.getIdLong(), sb.toString().trim());
-                if(!saveMap(excludeMap, Config.exclude_data_filename)){
-                    chan.sendMessage("Couldn't save your exclude list, probably due to me being in test mode." +
-                            " Sorry!").queue();
-                }
-                else {
-                    chan.sendMessage("Ok. Exclude list is now: " + sb).queue();
-                }
-            }
-            else {
-                chan.sendMessage("Exclude list is unchanged: " + excludeMap.get(user.getIdLong())).queue();
+            if(!excludeList.contains(tag)){
+                excludeList.add(tag);
+                changed = true;
             }
         }
+
+        if(changed){
+            StringBuilder sb = new StringBuilder();
+            for(String exclude : excludeList)
+                sb.append(exclude).append(" ");
+
+            // will update list
+            excludeMap.put(user.getIdLong(), sb.toString().trim());
+            if(!saveMap(excludeMap, Config.exclude_data_filename)){
+                chan.sendMessage("Couldn't save your exclude list, probably due to me being in test mode." +
+                        " Sorry!").queue();
+            }
+            else {
+                chan.sendMessage("Ok. Exclude list is now: " + sb).queue();
+            }
+        }
+        else {
+            chan.sendMessage("Exclude list is unchanged: " + excludeMap.get(user.getIdLong())).queue();
+        }
+
     }
 
     static void excludes(User user, String content, MessageChannel chan) {
@@ -379,8 +385,8 @@ public class BotFunctions {
             e.printStackTrace();
         }
     }
-
     // posts message and logs to console
+
     private static void postMessageAndLog(MessageChannel chan, String message){
         chan.sendMessage(message).queue();
         if(Config.debug){
