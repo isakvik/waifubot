@@ -7,6 +7,8 @@ import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.core.events.message.priv.PrivateMessageReceivedEvent;
 import net.dv8tion.jda.core.hooks.ListenerAdapter;
 
+import java.util.regex.Pattern;
+
 public class BotMessageListener extends ListenerAdapter {
 
     @Override
@@ -26,6 +28,9 @@ public class BotMessageListener extends ListenerAdapter {
 
         // no bots please
         if(user.isBot()) return;
+
+        // no highlights please
+        if(Pattern.compile("<@[!0-9]+>").matcher(content).find()) return;
 
         // remove unneeded whitespace in commands
         content = content.replaceAll("\\s+", " ");
