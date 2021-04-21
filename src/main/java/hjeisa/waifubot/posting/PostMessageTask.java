@@ -7,17 +7,17 @@ import hjeisa.waifubot.model.ApiObject;
 import hjeisa.waifubot.model.ImageResponse;
 import hjeisa.waifubot.model.Request;
 import hjeisa.waifubot.api.ApiConnector;
-import net.dv8tion.jda.core.entities.Message;
-import net.dv8tion.jda.core.entities.MessageChannel;
-import net.dv8tion.jda.core.requests.RequestFuture;
-import net.dv8tion.jda.core.requests.RestAction;
-import net.dv8tion.jda.core.utils.tuple.ImmutablePair;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.requests.restaction.MessageAction;
+import net.dv8tion.jda.internal.utils.tuple.ImmutablePair;
 
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 public class PostMessageTask implements Runnable {
@@ -110,10 +110,10 @@ public class PostMessageTask implements Runnable {
                 .append(response.getSourceURL().isEmpty() ? "none given" : "<" + response.getSourceURL() + ">");
 
         try {
-            RequestFuture<Message> imageMessageAction = chan.sendFile(response.getImageData(), response.getFileName(), null).submit();
+            CompletableFuture<Message> imageMessageAction = chan.sendFile(response.getImageData(), response.getFileName()).submit();
             Message imageUploadMessage = imageMessageAction.get(); // blocks
 
-            RequestFuture<Message> sourceMessageAction = chan.sendMessage(sourceMessageContent.toString()).submit();
+            CompletableFuture<Message> sourceMessageAction = chan.sendMessage(sourceMessageContent.toString()).submit();
             Message sourceMessage = sourceMessageAction.get();
 
             // store

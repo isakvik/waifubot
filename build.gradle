@@ -1,7 +1,7 @@
 group 'hjeisa'
 version '0.0.1'
 
-def jdaVersion = '3.3.0_260'
+def jdaVersion = '4.2.1_253'
 
 apply plugin: 'java'
 apply plugin: 'application'
@@ -10,6 +10,10 @@ mainClassName = 'hjeisa.waifubot.Bot'
 
 repositories {
     jcenter()
+    maven {
+        name 'm2-dv8tion'
+        url 'https://m2.dv8tion.net/releases'
+    }
 }
 
 dependencies {

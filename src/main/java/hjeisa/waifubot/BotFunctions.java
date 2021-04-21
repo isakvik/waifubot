@@ -2,17 +2,18 @@ package hjeisa.waifubot;
 
 import hjeisa.waifubot.model.Request;
 import hjeisa.waifubot.posting.PostController;
-import net.dv8tion.jda.core.entities.MessageChannel;
-import net.dv8tion.jda.core.entities.PrivateChannel;
-import net.dv8tion.jda.core.entities.TextChannel;
-import net.dv8tion.jda.core.entities.User;
-import net.dv8tion.jda.core.utils.tuple.ImmutablePair;
-import net.dv8tion.jda.core.utils.tuple.Pair;
+import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.PrivateChannel;
+import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.internal.utils.tuple.ImmutablePair;
+import net.dv8tion.jda.internal.utils.tuple.Pair;
 
 import java.io.*;
 import java.time.Duration;
 import java.time.format.DateTimeParseException;
 import java.util.*;
+import java.util.regex.Pattern;
 
 public class BotFunctions {
 
@@ -154,11 +155,11 @@ public class BotFunctions {
             girlToPost = content.substring("!bestgirl set ".length());
             bestGirlMap.put(user.getIdLong(), girlToPost);
             if(!saveMap(bestGirlMap, Config.best_girl_data_filename)){
-                chan.sendMessage("Ahh, I couldn't save your best girl to my data file. " +
-                        "I'll keep it in mind until I restart, though!").queue();
+                chan.sendMessage("Ahh, I couldn't save your best girl to my database. " +
+                        "I'll keep it in mind until I restart, though! Finding her for you now...").queue();
             }
             else {
-                chan.sendMessage("Ok, recognized your best girl.").queue();
+                chan.sendMessage("Ok, I'll keep her in mind for you.").queue();
             }
         }
         else {
@@ -167,6 +168,9 @@ public class BotFunctions {
                 chan.sendMessage("Set your best girl with the `!bestgirl set <character>` command first.").queue();
                 return;
             }
+            if(Pattern.compile("<@[!0-9]+>").matcher(girlToPost).find())
+                chan.sendMessage("Sorry, I can't pronounce her name right.").queue();
+
             chan.sendMessage(Util.cleanNameTag(girlToPost) + "!").queue();
         }
 

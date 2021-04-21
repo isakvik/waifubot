@@ -1,9 +1,7 @@
 package hjeisa.waifubot;
 
-import net.dv8tion.jda.core.AccountType;
-import net.dv8tion.jda.core.JDA;
-import net.dv8tion.jda.core.JDABuilder;
-import net.dv8tion.jda.core.exceptions.RateLimitedException;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.JDABuilder;
 
 import javax.security.auth.login.LoginException;
 import java.io.File;
@@ -16,11 +14,12 @@ public class Bot {
             dataDirectory.mkdir();  // create global data directory, used to store data across installations
 
         try {
-            JDA api = new JDABuilder(AccountType.BOT).setToken(Config.bot_token).buildAsync();
-            api.addEventListener(new BotMessageListener());
+            JDA bot = JDABuilder.createDefault(Config.bot_token)
+                    .addEventListeners(new BotMessageListener())
+                    .build();
 
             BotFunctions.initialize();
-        } catch (LoginException | RateLimitedException e) {
+        } catch (LoginException e) {
             e.printStackTrace();
         }
     }

@@ -3,8 +3,8 @@ package hjeisa.waifubot.posting;
 import hjeisa.waifubot.Config;
 import hjeisa.waifubot.Util;
 import hjeisa.waifubot.model.Request;
-import net.dv8tion.jda.core.entities.MessageChannel;
-import net.dv8tion.jda.core.utils.tuple.Pair;
+import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.internal.utils.tuple.Pair;
 
 import java.util.*;
 import java.util.concurrent.Executors;

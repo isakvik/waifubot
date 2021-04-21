@@ -1,11 +1,11 @@
 package hjeisa.waifubot;
 
-import net.dv8tion.jda.core.entities.Message;
-import net.dv8tion.jda.core.entities.MessageChannel;
-import net.dv8tion.jda.core.entities.User;
-import net.dv8tion.jda.core.events.message.guild.GuildMessageReceivedEvent;
-import net.dv8tion.jda.core.events.message.priv.PrivateMessageReceivedEvent;
-import net.dv8tion.jda.core.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
+import net.dv8tion.jda.api.events.message.priv.PrivateMessageReceivedEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 import java.util.regex.Pattern;
 
@@ -22,7 +22,7 @@ public class BotMessageListener extends ListenerAdapter {
     }
 
     private void executeFunctions(Message message){
-        String content = message.getRawContent();
+        String content = message.getContentRaw();
         MessageChannel chan = message.getChannel();
         User user = message.getAuthor();
 
