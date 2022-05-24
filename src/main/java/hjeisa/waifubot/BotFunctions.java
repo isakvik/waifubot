@@ -58,7 +58,7 @@ public class BotFunctions {
                 return;
             }
 
-            if(nsfwTag == null) nsfwTag = " rating:safe";
+            if(nsfwTag == null) nsfwTag = " " + Config.safe_tag;
             else                durationIndex += arguments[1].length() + 1;
 
             int searchTagIndex = content.indexOf(' ',durationIndex + 1);
@@ -130,7 +130,7 @@ public class BotFunctions {
             }
         }
 
-        if(nsfwTag == null) nsfwTag = " rating:safe";
+        if(nsfwTag == null) nsfwTag = " " + Config.safe_tag;
         else                searchTagIndex += arguments[1].length() + 1;
 
         searchTags = content.substring(searchTagIndex) + nsfwTag
@@ -183,7 +183,7 @@ public class BotFunctions {
                 return;
             }
         }
-        if(nsfwTag == null) nsfwTag = " rating:safe";
+        if(nsfwTag == null) nsfwTag = " " + Config.safe_tag;
 
         Request request = new Request(chan, user, 0,
             girlToPost + " 1girl" + nsfwTag + " " + excludeMap.getOrDefault(user.getIdLong(), ""));
@@ -356,7 +356,7 @@ public class BotFunctions {
         // TODO: redo tag handling so that additive tags can be used
         Map<String,String> tags = new HashMap<>();
         tags.put("-r","");
-        tags.put("-n"," -rating:safe");
+        tags.put("-n"," -" + Config.safe_tag);
         tags.put("-x"," rating:explicit");
 
         if(!tags.containsKey(argument)){

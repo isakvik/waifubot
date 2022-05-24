@@ -90,7 +90,7 @@ public class PostController {
 
     private boolean requestContainsForbiddenTag(Request request) {
         String[] tagArray = request.getSearchTagsWithoutExcludes().split(" ");
-        return !Arrays.asList(tagArray).contains("rating:safe") && !Collections.disjoint(Arrays.asList(tagArray), Config.forbidden_tags);
+        return !Arrays.asList(tagArray).contains(Config.safe_tag) && !Collections.disjoint(Arrays.asList(tagArray), Config.forbidden_tags);
     }
 
     public Map<Pair<Long,Long>, Pair<Long, Long>> getLastRequestResponseByUser() {
